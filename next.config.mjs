@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * Static Exports in Next.js
  *
