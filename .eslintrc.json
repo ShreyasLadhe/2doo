@@ -1,0 +1,13 @@
+{
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "perfectionist/sort-imports": "off",
+    "perfectionist/sort-named-imports": "off",
+    "no-unused-vars": "warn",
+    "unused-imports/no-unused-imports": "warn",
+    "react-hooks/exhaustive-deps": "warn",
+    "react/jsx-no-useless-fragment": "warn",
+    "react/jsx-boolean-value": "warn",
+    "react/no-unescaped-entities": "warn"
+  }
+} 
