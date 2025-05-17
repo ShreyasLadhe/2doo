@@ -131,6 +131,27 @@ export default function MyTasksPage() {
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [tagExpanded, setTagExpanded] = useState(false);
 
+  // Determine initial view based on screen width
+  useEffect(() => {
+    const handleResize = () => {
+      // Assuming 'sm' breakpoint is 600px. Use card view if screen width is less than 600px
+      if (window.innerWidth < 600) {
+        setCardView(true);
+      } else {
+        setCardView(false);
+      }
+    };
+
+    // Set initial view
+    handleResize();
+
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+
+    // Clean up event listener
+    return () => window.removeEventListener('resize', handleResize);
+  }, []); // Empty dependency array means this runs once on mount and cleans up on unmount
+
   // Filtering logic for search, date range, and tags
   let filteredTasks = tasks;
   if (searchText) {
@@ -286,7 +307,6 @@ export default function MyTasksPage() {
   // Handle view switching
   const handleViewSwitch = () => {
     setCardView((v) => !v);
-    fetchTasks(); // Fetch fresh data when switching views
   };
 
   // Delete task and its subtasks
@@ -324,7 +344,7 @@ export default function MyTasksPage() {
         My Tasks
       </Typography>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Stack direction="row" spacing={2} alignItems="center" justifyContent="flex-end" sx={{ width: '100%' }}>
+        <Stack direction="row" spacing={2} alignItems="center" justifyContent="flex-end" sx={{ width: '100%', flexWrap: 'wrap', gap: 1 }}>
           {/* Search Icon/Input */}
           {searchExpanded ? (
             <TextField
@@ -334,7 +354,7 @@ export default function MyTasksPage() {
               size="small"
               autoFocus
               onBlur={() => setSearchExpanded(false)}
-              sx={{ minWidth: 220, transition: 'min-width 0.2s' }}
+              sx={{ minWidth: { xs: '100%', sm: 220 }, transition: 'min-width 0.2s' }}
             />
           ) : (
             <Tooltip title="Search Tasks">
@@ -386,7 +406,7 @@ export default function MyTasksPage() {
                 ))
               }
               renderInput={params => <TextField {...params} label="Filter by Tags" placeholder="Tags" size="small" autoFocus onBlur={() => setTagExpanded(false)} />}
-              sx={{ minWidth: 220, transition: 'min-width 0.2s' }}
+              sx={{ minWidth: { xs: '100%', sm: 220 }, transition: 'min-width 0.2s' }}
             />
           ) : (
             <Tooltip title="Filter by Tags">
@@ -403,7 +423,7 @@ export default function MyTasksPage() {
             sx={{ display: 'flex', alignItems: 'center' }}
           >
             <Iconify icon={cardView ? 'solar:list-bold' : 'solar:card-bold'} width={24} />
-            <Typography variant="body2" sx={{ ml: 1 }}>
+            <Typography variant="body2" sx={{ ml: 1, display: { xs: 'none', sm: 'block' } }}>
               {cardView ? 'List View' : 'Grid View'}
             </Typography>
           </IconButton>
@@ -413,7 +433,11 @@ export default function MyTasksPage() {
             color="primary"
             startIcon={<Iconify icon="mingcute:add-line" />}
             onClick={handleOpenTaskForm}
-            sx={{ ml: 2 }}
+            sx={{
+              ml: { xs: 0, sm: 2 },
+              width: { xs: '100%', sm: 'auto' },
+              mt: { xs: 1, sm: 0 }
+            }}
           >
             New Task
           </Button>
@@ -439,10 +463,13 @@ export default function MyTasksPage() {
                   paginatedTasks.forEach(task => { newExpanded[task.id] = true; });
                   setExpanded(newExpanded);
                 }
-                // Always switch to Masonry layout when expanding/compressing all
-                if (!cardView) setCardView(true);
               }}
-              sx={{ ml: 1 }}
+              sx={{
+                ml: { xs: 0, sm: 1 },
+                width: { xs: '100%', sm: 'auto' },
+                mt: { xs: 1, sm: 0 },
+                display: { xs: 'none', sm: 'flex' }
+              }}
             >
               {Object.values(expanded).filter(Boolean).length === paginatedTasks.length ? 'Compress All' : 'Expand All'}
             </Button>

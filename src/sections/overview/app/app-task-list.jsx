@@ -526,37 +526,45 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
             <Checkbox
               checked={row.status === 'completed'}
               onChange={() => onMarkCompleteTask && onMarkCompleteTask(row)}
-              color="success"
+              color='success'
               sx={{ mr: 1, p: 0.5 }}
               disabled={row.status === 'completed'}
             />
             <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', ml: 1 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="body1" fontWeight={600} sx={{ lineHeight: 1.2 }}>
+                <Typography variant='body1' fontWeight={600} sx={{ lineHeight: 1.2 }}>
                   {row.title}
                 </Typography>
                 {row.isOverdue && (
                   <Chip
-                    label="Overdue"
-                    size="small"
-                    color="error"
-                    variant="soft"
+                    label='Overdue'
+                    size='small'
+                    color='error'
+                    variant='soft'
                     sx={{ height: 20, fontSize: '0.75rem' }}
                   />
                 )}
               </Box>
               {row.tags && row.tags.length > 0 && (
-                <Stack direction="row" spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
+                <Stack direction='row' spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
                   {row.tags.map((tag) => (
-                    <Chip key={tag.tag_id} label={tag.name} size="small" color="info" variant="soft" />
+                    <Chip key={tag.tag_id} label={tag.name} size='small' color='info' variant='soft' />
                   ))}
                 </Stack>
               )}
             </Box>
           </Box>
         </TableCell>
-        <TableCell sx={{ minWidth: 260, maxWidth: 260, color: row.isOverdue ? (theme) => theme.palette.error.main : row.status === 'completed' ? 'success.main' : undefined, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', pl: 2 }}>
-          <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-line', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <TableCell sx={{
+          minWidth: 260,
+          maxWidth: 260,
+          color: row.isOverdue ? (theme) => theme.palette.error.main : row.status === 'completed' ? 'success.main' : undefined,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          pl: 2
+        }}>
+          <Typography variant='body2' color='text.secondary' sx={{ whiteSpace: 'pre-line', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {row.description}
           </Typography>
         </TableCell>
@@ -569,7 +577,7 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
         </TableCell>
         <TableCell>
           <Label
-            variant="soft"
+            variant='soft'
             color={
               (row.priority === 'high' && 'error') ||
               (row.priority === 'medium' && 'warning') ||
@@ -580,17 +588,19 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
           </Label>
         </TableCell>
         <TableCell>
-          <IconButton color="info" onClick={onView}>
-            <Iconify icon="solar:eye-bold" />
-          </IconButton>
-          <IconButton color="primary" onClick={handleEdit}>
-            <Iconify icon="solar:pen-bold" />
-          </IconButton>
-          <IconButton
-            color={row.priority === 'overdue' ? 'error' : 'error'}
-            onClick={handleDelete} title="Delete Task">
-            <Iconify icon="solar:trash-bin-trash-bold" />
-          </IconButton>
+          <Stack direction='row' spacing={1}>
+            <IconButton color='info' onClick={onView}>
+              <Iconify icon='solar:eye-bold' />
+            </IconButton>
+            <IconButton color='primary' onClick={handleEdit}>
+              <Iconify icon='solar:pen-bold' />
+            </IconButton>
+            <IconButton
+              color={row.priority === 'overdue' ? 'error' : 'error'}
+              onClick={handleDelete} title='Delete Task'>
+              <Iconify icon='solar:trash-bin-trash-bold' />
+            </IconButton>
+          </Stack>
         </TableCell>
       </TableRow>
     </>

@@ -138,6 +138,27 @@ export function OverviewAppView() {
   const [expanded, setExpanded] = useState({});
   const [page, setPage] = useState(1);
 
+  // Determine initial view based on screen width
+  useEffect(() => {
+    const handleResize = () => {
+      // Assuming 'sm' breakpoint is 600px. Use card view if screen width is less than 600px
+      if (window.innerWidth < 600) {
+        setCardView(true);
+      } else {
+        setCardView(false);
+      }
+    };
+
+    // Set initial view
+    handleResize();
+
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+
+    // Clean up event listener
+    return () => window.removeEventListener('resize', handleResize);
+  }, []); // Empty dependency array means this runs once on mount and cleans up on unmount
+
   // Moved fetchTasks logic into a useCallback
   const fetchTasks = useCallback(async () => {
     if (!user?.id) {
@@ -399,7 +420,7 @@ export function OverviewAppView() {
         </Grid>
 
         <Grid size={{ xs: 12, lg: 12 }}>
-          <Stack direction="row" spacing={2} alignItems="center" justifyContent="flex-end" sx={{ mb: 2 }}>
+          <Stack direction="row" spacing={2} alignItems="center" justifyContent="flex-end" sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
             {/* Search Icon/Input */}
             {searchExpanded ? (
               <TextField
@@ -409,7 +430,7 @@ export function OverviewAppView() {
                 size="small"
                 autoFocus
                 onBlur={() => setSearchExpanded(false)}
-                sx={{ minWidth: 220, transition: 'min-width 0.2s' }}
+                sx={{ minWidth: { xs: '100%', sm: 220 }, transition: 'min-width 0.2s' }}
               />
             ) : (
               <Tooltip title="Search Tasks">
@@ -461,7 +482,7 @@ export function OverviewAppView() {
                   ))
                 }
                 renderInput={params => <TextField {...params} label="Filter by Tags" placeholder="Tags" size="small" autoFocus onBlur={() => setTagExpanded(false)} />}
-                sx={{ minWidth: 220, transition: 'min-width 0.2s' }}
+                sx={{ minWidth: { xs: '100%', sm: 220 }, transition: 'min-width 0.2s' }}
               />
             ) : (
               <Tooltip title="Filter by Tags">
@@ -478,7 +499,7 @@ export function OverviewAppView() {
               sx={{ display: 'flex', alignItems: 'center' }}
             >
               <Iconify icon={cardView ? 'solar:list-bold' : 'solar:card-bold'} width={24} />
-              <Typography variant="body2" sx={{ ml: 1 }}>
+              <Typography variant="body2" sx={{ ml: 1, display: { xs: 'none', sm: 'block' } }}>
                 {cardView ? 'List View' : 'Grid View'}
               </Typography>
             </IconButton>
@@ -506,7 +527,7 @@ export function OverviewAppView() {
                     setExpanded(newExpanded);
                   }
                 }}
-                sx={{ ml: 1 }}
+                sx={{ ml: 1, display: { xs: 'none', sm: 'flex' } }}
               >
                 {Object.values(expanded).filter(Boolean).length === paginatedTasks.length ? 'Compress All' : 'Expand All'}
               </Button>
@@ -517,7 +538,11 @@ export function OverviewAppView() {
               color="primary"
               startIcon={<Iconify icon="mingcute:add-line" />}
               onClick={handleOpenTaskForm}
-              sx={{ ml: 2 }}
+              sx={{
+                ml: { xs: 0, sm: 2 },
+                width: { xs: '100%', sm: 'auto' },
+                mt: { xs: 1, sm: 0 }
+              }}
             >
               New Task
             </Button>
