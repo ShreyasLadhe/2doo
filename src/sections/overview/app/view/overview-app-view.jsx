@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogActions, Typography, Stack, Checkbox, Pagi
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 import TextField from '@mui/material/TextField';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -39,6 +41,9 @@ import { supabase } from 'src/lib/supabase';
 
 // ----------------------------------------------------------------------
 
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 // Helper to format YYYY-MM-DD HH:mm to DD-MM-YYYY HH:mm
 function formatDateDisplay(dateStr) {
   if (!dateStr) return '';
@@ -47,22 +52,63 @@ function formatDateDisplay(dateStr) {
   return `${day}-${month}-${year} ${timePart || '00:00'}`;
 }
 
-// Helper to split date and time
+// Helper to split date and time (for due_date - no timezone conversion)
 function splitDateTime(dateStr) {
   if (!dateStr) return { date: '', time: '' };
   let datePart = '', timePart = '';
+  // Handle ISO strings from database that might have 'T' or just space
   if (dateStr.includes('T')) {
     [datePart, timePart] = dateStr.split('T');
-    timePart = timePart.split(/[+Z]/)[0];
+    timePart = timePart.split(/[+Z]/)[0]; // Remove timezone offset or Z
   } else {
     [datePart, timePart] = dateStr.split(' ');
   }
   const [year, month, day] = datePart.split('-');
-  const [hour = '00', minute = '00'] = (timePart || '').split(':');
+  // Handle time format that might include seconds
+  const [hour = '00', minute = '00'] = (timePart || '').split(':').slice(0, 2);
   return {
     date: `${day}-${month}-${year}`,
     time: `${hour}:${minute}`,
   };
+}
+
+// Helper to split and format completed_at (with GMT+5:30 conversion)
+function splitAndFormatCompletedAt(dateStr) {
+  if (!dateStr) return { date: '', time: '' };
+
+  // Parse the UTC date string from Supabase
+  const dateTime = dayjs.utc(dateStr);
+
+  // Convert to GMT+5:30 (Asia/Kolkata) and format
+  const targetTimezone = 'Asia/Kolkata';
+  const formattedDateTime = dateTime.tz(targetTimezone).format('DD-MM-YYYY HH:mm');
+
+  const [datePart, timePart] = formattedDateTime.split(' ');
+
+  return {
+    date: datePart,
+    time: timePart || '00:00',
+  };
+}
+
+// Helper to get current time with GMT+5:30 offset
+function getCurrentTimeGMT530() {
+  const now = new Date();
+  const offsetMinutes = 5 * 60 + 30;
+  const offsetMilliseconds = offsetMinutes * 60 * 1000;
+  // Get the current UTC time in milliseconds
+  const utcTime = now.getTime() + (now.getTimezoneOffset() * 60 * 1000);
+  // Add the GMT+5:30 offset
+  const targetTime = new Date(utcTime + offsetMilliseconds);
+
+  const year = targetTime.getFullYear();
+  const month = `${targetTime.getMonth() + 1}`.padStart(2, '0');
+  const day = `${targetTime.getDate()}`.padStart(2, '0');
+  const hours = `${targetTime.getHours()}`.padStart(2, '0');
+  const minutes = `${targetTime.getMinutes()}`.padStart(2, '0');
+  const seconds = `${targetTime.getSeconds()}`.padStart(2, '0');
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}+05:30`;
 }
 
 export function OverviewAppView() {
@@ -135,9 +181,10 @@ export function OverviewAppView() {
     });
 
     // Mark overdue and sort
-    const today = dayjs().format('YYYY-MM-DD');
+    const now = dayjs();
     tasksWithSubtasks = tasksWithSubtasks.map(task => {
-      const isOverdue = task.due_date < today && task.status !== 'completed';
+      // Check if due_date is before now and status is not completed
+      const isOverdue = task.due_date ? dayjs(task.due_date).isBefore(now) && task.status !== 'completed' : false;
       return { ...task, isOverdue };
     });
     // Sort: overdue first, then by priority, then due date
@@ -147,7 +194,16 @@ export function OverviewAppView() {
       const pa = priorityOrder[a.priority] ?? 4;
       const pb = priorityOrder[b.priority] ?? 4;
       if (pa !== pb) return pa - pb;
-      return (a.due_date || '').localeCompare(b.due_date || '');
+      // Use dayjs for accurate sorting by due date and time
+      const dateA = dayjs(a.due_date);
+      const dateB = dayjs(b.due_date);
+      if (dateA.isValid() && dateB.isValid()) {
+        return dateA.diff(dateB);
+      }
+      // Handle invalid dates (e.g., null) - place tasks with no due date at the end
+      if (dateA.isValid() && !dateB.isValid()) return -1;
+      if (!dateA.isValid() && dateB.isValid()) return 1;
+      return 0; // Both invalid or both null
     });
 
     setTasks(tasksWithSubtasks);
@@ -214,7 +270,7 @@ export function OverviewAppView() {
 
   // Mark task as complete
   const handleMarkCompleteTask = async (task) => {
-    await supabase.from('tasks').update({ status: 'completed' }).eq('id', task.id);
+    await supabase.from('tasks').update({ status: 'completed', completed_at: getCurrentTimeGMT530() }).eq('id', task.id);
     fetchTasks();
   };
 
@@ -243,41 +299,54 @@ export function OverviewAppView() {
   }
 
   // Filtering logic for tabs
-  const todayDate = dayjs().format('YYYY-MM-DD');
-  const tomorrow = dayjs().add(1, 'day').format('YYYY-MM-DD');
-  const startOfWeek = dayjs().startOf('week').format('YYYY-MM-DD');
-  const endOfWeek = dayjs().endOf('week').format('YYYY-MM-DD');
-  const startOfMonth = dayjs().startOf('month').format('YYYY-MM-DD');
-  const endOfMonth = dayjs().endOf('month').format('YYYY-MM-DD');
+  const todayStart = dayjs().startOf('day');
+  const todayEnd = dayjs().endOf('day');
+  const tomorrowStart = dayjs().add(1, 'day').startOf('day');
+  const tomorrowEnd = dayjs().add(1, 'day').endOf('day');
+  const weekStart = dayjs().startOf('week');
+  const weekEnd = dayjs().endOf('week');
+  const monthStart = dayjs().startOf('month');
+  const monthEnd = dayjs().endOf('month');
 
   if (tab === 'today') {
-    filteredTasks = [
+    filteredTasks = [ // Show overdue tasks first, then tasks due today
       ...filteredTasks.filter(task => task.isOverdue && task.status !== 'completed'),
-      ...filteredTasks.filter(task => task.due_date === todayDate && task.status !== 'completed' && !task.isOverdue),
+      ...filteredTasks.filter(task =>
+        task.due_date &&
+        dayjs(task.due_date).isAfter(dayjs(), 'minute') && // Must be in the future compared to now
+        dayjs(task.due_date).isBetween(todayStart, todayEnd, 'minute', '[]') && // Must be within today's date range inclusive
+        task.status !== 'completed' &&
+        !task.isOverdue
+      ),
     ];
   } else if (tab === 'tomorrow') {
-    filteredTasks = [
+    filteredTasks = [ // Show overdue tasks first, then tasks due tomorrow
       ...filteredTasks.filter(task => task.isOverdue && task.status !== 'completed'),
-      ...filteredTasks.filter(task => task.due_date === tomorrow && task.status !== 'completed' && !task.isOverdue),
+      ...filteredTasks.filter(task =>
+        task.due_date &&
+        dayjs(task.due_date).isBetween(tomorrowStart, tomorrowEnd, 'minute', '[]') && // Must be within tomorrow's date range inclusive
+        task.status !== 'completed' &&
+        !task.isOverdue
+      ),
     ];
   } else if (tab === 'week') {
-    filteredTasks = [
+    filteredTasks = [ // Show overdue tasks first, then tasks due this week
       ...filteredTasks.filter(task => task.isOverdue && task.status !== 'completed'),
       ...filteredTasks.filter(
         task =>
-          task.due_date >= startOfWeek &&
-          task.due_date <= endOfWeek &&
+          task.due_date &&
+          dayjs(task.due_date).isBetween(weekStart, weekEnd, 'minute', '[]') && // Must be within this week's date range inclusive
           task.status !== 'completed' &&
           !task.isOverdue
       ),
     ];
   } else if (tab === 'month') {
-    filteredTasks = [
+    filteredTasks = [ // Show overdue tasks first, then tasks due this month
       ...filteredTasks.filter(task => task.isOverdue && task.status !== 'completed'),
       ...filteredTasks.filter(
         task =>
-          task.due_date >= startOfMonth &&
-          task.due_date <= endOfMonth &&
+          task.due_date &&
+          dayjs(task.due_date).isBetween(monthStart, monthEnd, 'minute', '[]') && // Must be within this month's date range inclusive
           task.status !== 'completed' &&
           !task.isOverdue
       ),
@@ -291,8 +360,8 @@ export function OverviewAppView() {
   const paginatedListTasks = filteredTasks.slice((listPage - 1) * ROWS_PER_PAGE, listPage * ROWS_PER_PAGE);
 
   const tasksForTheWeek = tasks.filter(task =>
-    task.due_date >= startOfWeek &&
-    task.due_date <= endOfWeek
+    task.due_date >= weekStart.format('YYYY-MM-DD') &&
+    task.due_date <= weekEnd.format('YYYY-MM-DD')
   );
 
   const CARDS_PER_PAGE = 9;
@@ -466,6 +535,7 @@ export function OverviewAppView() {
                 <Masonry columns={3} spacing={4}>
                   {paginatedTasks.map((task) => {
                     const { date, time } = splitDateTime(task.due_date);
+                    const completionDateTime = task.status === 'completed' && task.completed_at ? splitAndFormatCompletedAt(task.completed_at) : null;
                     return (
                       <Card key={task.id} sx={{
                         borderRadius: 3,
@@ -603,19 +673,37 @@ export function OverviewAppView() {
                               </Stack>
                             </Box>
                           )}
-                          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                            <Chip
-                              label={
-                                <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 0 }}>
-                                  <span style={{ fontWeight: 500 }}>Due: {date}</span>
-                                  <span style={{ color: '#aaa', fontSize: '0.95em', marginLeft: 8 }}>{time}</span>
-                                </Box>
-                              }
-                              size="small"
-                              icon={<Iconify icon="solar:calendar-bold" />}
-                              variant="outlined"
-                            />
-                          </Stack>
+                          {completionDateTime && (
+                            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                              <Chip
+                                label={
+                                  <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 0 }}>
+                                    <span style={{ fontWeight: 500 }}>Completed: {completionDateTime.date}</span>
+                                    <span style={{ color: '#aaa', fontSize: '0.95em', marginLeft: 8 }}>{completionDateTime.time}</span>
+                                  </Box>
+                                }
+                                size="small"
+                                icon={<Iconify icon="solar:check-circle-bold-duotone" />}
+                                variant="soft"
+                                color="success"
+                              />
+                            </Stack>
+                          )}
+                          {!completionDateTime && (
+                            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                              <Chip
+                                label={
+                                  <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 0 }}>
+                                    <span style={{ fontWeight: 500 }}>Due: {date}</span>
+                                    <span style={{ color: '#aaa', fontSize: '0.95em', marginLeft: 8 }}>{time}</span>
+                                  </Box>
+                                }
+                                size="small"
+                                icon={<Iconify icon="solar:calendar-bold" />}
+                                variant="outlined"
+                              />
+                            </Stack>
+                          )}
                           <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mt: 2 }}>
                             <Box>
                               {task.tags && task.tags.length > 0 && (
@@ -651,6 +739,7 @@ export function OverviewAppView() {
                     <Grid container spacing={4} justifyContent="center" alignItems="stretch" sx={{ width: '100%', margin: 0, mb: rowIndex !== arr.length - 1 ? 8 : 0 }} key={rowIndex}>
                       {row.map((task) => {
                         const { date, time } = splitDateTime(task.due_date);
+                        const completionDateTime = task.status === 'completed' && task.completed_at ? splitAndFormatCompletedAt(task.completed_at) : null;
                         return (
                           <Grid item xs={12} sm={6} md={4} key={task.id} display="flex" justifyContent="center">
                             <Card sx={{
@@ -789,19 +878,37 @@ export function OverviewAppView() {
                                     </Stack>
                                   </Box>
                                 )}
-                                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                                  <Chip
-                                    label={
-                                      <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 0 }}>
-                                        <span style={{ fontWeight: 500 }}>Due: {date}</span>
-                                        <span style={{ color: '#aaa', fontSize: '0.95em', marginLeft: 8 }}>{time}</span>
-                                      </Box>
-                                    }
-                                    size="small"
-                                    icon={<Iconify icon="solar:calendar-bold" />}
-                                    variant="outlined"
-                                  />
-                                </Stack>
+                                {completionDateTime && (
+                                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                                    <Chip
+                                      label={
+                                        <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 0 }}>
+                                          <span style={{ fontWeight: 500 }}>Completed: {completionDateTime.date}</span>
+                                          <span style={{ color: '#aaa', fontSize: '0.95em', marginLeft: 8 }}>{completionDateTime.time}</span>
+                                        </Box>
+                                      }
+                                      size="small"
+                                      icon={<Iconify icon="solar:check-circle-bold-duotone" />}
+                                      variant="soft"
+                                      color="success"
+                                    />
+                                  </Stack>
+                                )}
+                                {!completionDateTime && (
+                                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                                    <Chip
+                                      label={
+                                        <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 0 }}>
+                                          <span style={{ fontWeight: 500 }}>Due: {date}</span>
+                                          <span style={{ color: '#aaa', fontSize: '0.95em', marginLeft: 8 }}>{time}</span>
+                                        </Box>
+                                      }
+                                      size="small"
+                                      icon={<Iconify icon="solar:calendar-bold" />}
+                                      variant="outlined"
+                                    />
+                                  </Stack>
+                                )}
                                 <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mt: 2 }}>
                                   <Box>
                                     {task.tags && task.tags.length > 0 && (

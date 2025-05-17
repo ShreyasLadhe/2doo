@@ -3,6 +3,11 @@ import { useState, useEffect } from 'react';
 import { paths } from 'src/routes/paths';
 import { supabase } from 'src/lib/supabase';
 import PropTypes from 'prop-types';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -48,21 +53,42 @@ function formatDateDisplay(dateStr) {
   return `${day}-${month}-${year} ${timePart || '00:00'}`;
 }
 
-// Helper to split date and time
+// Helper to split date and time (for due_date - no timezone conversion)
 function splitDateTime(dateStr) {
   if (!dateStr) return { date: '', time: '' };
   let datePart = '', timePart = '';
+  // Handle ISO strings from database that might have 'T' or just space
   if (dateStr.includes('T')) {
     [datePart, timePart] = dateStr.split('T');
-    timePart = timePart.split(/[+Z]/)[0];
+    timePart = timePart.split(/[+Z]/)[0]; // Remove timezone offset or Z
   } else {
     [datePart, timePart] = dateStr.split(' ');
   }
   const [year, month, day] = datePart.split('-');
-  const [hour = '00', minute = '00'] = (timePart || '').split(':');
+  // Handle time format that might include seconds
+  const [hour = '00', minute = '00'] = (timePart || '').split(':').slice(0, 2);
   return {
     date: `${day}-${month}-${year}`,
     time: `${hour}:${minute}`,
+  };
+}
+
+// Helper to split and format completed_at (with GMT+5:30 conversion)
+function splitAndFormatCompletedAt(dateStr) {
+  if (!dateStr) return { date: '', time: '' };
+
+  // Parse the UTC date string from Supabase
+  const dateTime = dayjs.utc(dateStr);
+
+  // Convert to GMT+5:30 (Asia/Kolkata) and format
+  const targetTimezone = 'Asia/Kolkata';
+  const formattedDateTime = dateTime.tz(targetTimezone).format('DD-MM-YYYY HH:mm');
+
+  const [datePart, timePart] = formattedDateTime.split(' ');
+
+  return {
+    date: datePart,
+    time: timePart || '00:00',
   };
 }
 
@@ -295,6 +321,10 @@ function TaskViewDialog({ task, onClose }) {
     closeDeleteDialog();
   };
 
+  // In the TaskViewDialog, update the display for due date and completion date.
+  const { date: dueDate, time: dueTime } = splitDateTime(task.due_date);
+  const completionDateTime = task.status === 'completed' && task.completed_at ? splitAndFormatCompletedAt(task.completed_at) : null;
+
   // Priority chip color
   const priorityColor =
     (task.priority === 'overdue' && 'error') ||
@@ -320,7 +350,15 @@ function TaskViewDialog({ task, onClose }) {
           )}
           <Divider sx={{ mb: 2 }} />
           <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-            <Chip label={`Due: ${formatDateDisplay(task.due_date)}`} icon={<Iconify icon="solar:calendar-bold" />} variant="outlined" />
+            {/* Display Completion Date/Time if completed */}
+            {completionDateTime && (
+              <Chip label={<>Completed: {completionDateTime.date} {completionDateTime.time}</>} icon={<Iconify icon="solar:check-circle-bold-duotone" />} variant="soft" color="success" />
+            )}
+
+            {/* Display Due Date/Time if not completed */}
+            {!completionDateTime && (
+              <Chip label={`Due: ${dueDate} ${dueTime}`} icon={<Iconify icon="solar:calendar-bold" />} variant="outlined" />
+            )}
             <Chip label={task.priority} color={priorityColor} icon={<Iconify icon="solar:flag-bold" />} />
             <Chip label={task.status} color={statusColor} icon={<Iconify icon="solar:check-circle-bold" />} />
           </Stack>
@@ -449,11 +487,13 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
     </CustomPopover>
   );
 
+  // In the due date/completion date cell, use the correct formatting function.
+  const { date: dueDate, time: dueTime } = splitDateTime(row.due_date);
   return (
     <>
       <TableRow
         sx={{
-          ...(row.priority === 'overdue'
+          ...(row.isOverdue
             ? {
               color: (theme) => theme.palette.error.main,
               '& td, & th': { color: (theme) => theme.palette.error.main },
@@ -521,7 +561,11 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
           </Typography>
         </TableCell>
         <TableCell sx={row.isOverdue ? { color: (theme) => theme.palette.error.main } : row.status === 'completed' ? { textDecoration: 'line-through', color: 'success.main' } : {}}>
-          {(() => { const { date, time } = splitDateTime(row.due_date); return <span>{date}<br /><span style={{ color: '#aaa', fontSize: '0.9em' }}>{time}</span></span>; })()}
+          {row.status === 'completed' && row.completed_at ? (
+            (() => { const { date, time } = splitDateTime(row.completed_at); return <span>Completed: {date}<br /><span style={{ color: '#aaa', fontSize: '0.9em' }}>{time}</span></span>; })()
+          ) : (
+            (() => { const { date, time } = splitDateTime(row.due_date); return <span>Due: {date}<br /><span style={{ color: '#aaa', fontSize: '0.9em' }}>{time}</span></span>; })()
+          )}
         </TableCell>
         <TableCell>
           <Label
