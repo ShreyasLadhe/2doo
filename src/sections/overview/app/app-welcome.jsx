@@ -7,7 +7,7 @@ import { CONFIG } from 'src/global-config';
 
 // ----------------------------------------------------------------------
 
-export function AppWelcome({ title, description, action, img, sx, ...other }) {
+export function AppWelcome({ title, description, action, sx, ...other }) {
   return (
     <Box
       sx={[
@@ -18,19 +18,17 @@ export function AppWelcome({ title, description, action, img, sx, ...other }) {
               `url(${CONFIG.assetsDir}/assets/background/background-5.webp)`,
             ],
           }),
-          pt: 5,
-          pb: 5,
-          pr: 3,
-          gap: 5,
+          pt: 8,
+          pb: 8,
+          px: 3,
           borderRadius: 2,
           display: 'flex',
           height: { md: 1 },
           position: 'relative',
-          pl: { xs: 3, md: 5 },
           alignItems: 'center',
+          justifyContent: 'center',
           color: 'common.white',
-          textAlign: { xs: 'center', md: 'left' },
-          flexDirection: { xs: 'column', md: 'row' },
+          textAlign: 'center',
           border: `solid 1px ${theme.vars.palette.grey[800]}`,
         }),
         ...(Array.isArray(sx) ? sx : [sx]),
@@ -40,23 +38,41 @@ export function AppWelcome({ title, description, action, img, sx, ...other }) {
       <Box
         sx={{
           display: 'flex',
-          flex: '1 1 auto',
           flexDirection: 'column',
-          alignItems: { xs: 'center', md: 'flex-start' },
+          alignItems: 'center',
+          maxWidth: 800,
         }}
       >
-        <Typography variant="h4" sx={{ whiteSpace: 'pre-line', mb: 1 }}>
+        <Typography
+          variant="h2"
+          sx={{
+            whiteSpace: 'pre-line',
+            mb: 2,
+            fontWeight: 700,
+            letterSpacing: 1,
+          }}
+        >
           {title}
         </Typography>
 
-        <Typography variant="body2" sx={{ opacity: 0.64, maxWidth: 360, ...(action && { mb: 3 }) }}>
+        <Typography
+          variant="h6"
+          sx={{
+            opacity: 0.8,
+            maxWidth: 600,
+            mb: 4,
+            lineHeight: 1.6,
+          }}
+        >
           {description}
         </Typography>
 
-        {action && action}
+        {action && (
+          <Box sx={{ transform: 'scale(1.2)' }}>
+            {action}
+          </Box>
+        )}
       </Box>
-
-      {img && <Box sx={{ maxWidth: 260 }}>{img}</Box>}
     </Box>
   );
 }

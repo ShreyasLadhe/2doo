@@ -441,6 +441,32 @@ export default function MyTasksPage() {
                     }}>
                       {task.description}
                     </Typography>
+                    {task.subtasks && task.subtasks.length > 0 && (
+                      <Box sx={{ mb: 1 }}>
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <LinearProgress
+                            variant="determinate"
+                            value={(task.subtasks.filter(sub => sub.completed).length / task.subtasks.length) * 100}
+                            sx={{
+                              flex: 1,
+                              height: 8,
+                              borderRadius: 4,
+                              backgroundColor: (theme) => theme.palette.grey[200],
+                              '& .MuiLinearProgress-bar': {
+                                borderRadius: 4,
+                                backgroundColor: (theme) =>
+                                  task.subtasks.every(sub => sub.completed)
+                                    ? theme.palette.success.main
+                                    : theme.palette.primary.main,
+                              },
+                            }}
+                          />
+                          <Typography variant="caption" color="text.secondary">
+                            {task.subtasks.filter(sub => sub.completed).length}/{task.subtasks.length}
+                          </Typography>
+                        </Stack>
+                      </Box>
+                    )}
                     {expanded[task.id] && task.subtasks && task.subtasks.length > 0 && (
                       <Box sx={{ mb: 1, mt: 1 }}>
                         <Typography variant="subtitle2" sx={{ mb: 1 }}>Subtasks</Typography>
@@ -594,6 +620,32 @@ export default function MyTasksPage() {
                           }}>
                             {task.description}
                           </Typography>
+                          {task.subtasks && task.subtasks.length > 0 && (
+                            <Box sx={{ mb: 1 }}>
+                              <Stack direction="row" alignItems="center" spacing={1}>
+                                <LinearProgress
+                                  variant="determinate"
+                                  value={(task.subtasks.filter(sub => sub.completed).length / task.subtasks.length) * 100}
+                                  sx={{
+                                    flex: 1,
+                                    height: 8,
+                                    borderRadius: 4,
+                                    backgroundColor: (theme) => theme.palette.grey[200],
+                                    '& .MuiLinearProgress-bar': {
+                                      borderRadius: 4,
+                                      backgroundColor: (theme) =>
+                                        task.subtasks.every(sub => sub.completed)
+                                          ? theme.palette.success.main
+                                          : theme.palette.primary.main,
+                                    },
+                                  }}
+                                />
+                                <Typography variant="caption" color="text.secondary">
+                                  {task.subtasks.filter(sub => sub.completed).length}/{task.subtasks.length}
+                                </Typography>
+                              </Stack>
+                            </Box>
+                          )}
                           {expanded[task.id] && task.subtasks && task.subtasks.length > 0 && (
                             <Box sx={{ mb: 1, mt: 1 }}>
                               <Typography variant="subtitle2" sx={{ mb: 1 }}>Subtasks</Typography>
