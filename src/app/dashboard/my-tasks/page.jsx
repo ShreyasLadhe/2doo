@@ -399,12 +399,12 @@ export default function MyTasksPage() {
           <IconButton
             color={cardView ? 'primary' : 'default'}
             onClick={handleViewSwitch}
-            title={cardView ? 'Switch to List View' : 'Switch to Card View'}
+            title={cardView ? 'Switch to List View' : 'Switch to Grid View'}
             sx={{ display: 'flex', alignItems: 'center' }}
           >
             <Iconify icon={cardView ? 'solar:list-bold' : 'solar:card-bold'} width={24} />
             <Typography variant="body2" sx={{ ml: 1 }}>
-              {cardView ? 'List View' : 'Card View'}
+              {cardView ? 'List View' : 'Grid View'}
             </Typography>
           </IconButton>
           {/* New Task Button at the far right */}
@@ -417,7 +417,7 @@ export default function MyTasksPage() {
           >
             New Task
           </Button>
-          {/* Expand/Compress All button for card view */}
+          {/* Expand/Compress All button for Grid View */}
           {cardView && (
             <Button
               variant="outlined"

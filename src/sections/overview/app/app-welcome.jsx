@@ -12,12 +12,6 @@ export function AppWelcome({ title, description, action, sx, ...other }) {
     <Box
       sx={[
         (theme) => ({
-          ...theme.mixins.bgGradient({
-            images: [
-              `linear-gradient(to right, ${varAlpha(theme.vars.palette.grey['900Channel'], 0.88)} 0%, ${theme.vars.palette.grey[900]} 75%)`,
-              `url(${CONFIG.assetsDir}/assets/background/background-5f.webp)`,
-            ],
-          }),
           pt: 8,
           pb: 8,
           px: 3,
@@ -27,9 +21,8 @@ export function AppWelcome({ title, description, action, sx, ...other }) {
           position: 'relative',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'common.white',
+          color: 'common.primary',
           textAlign: 'center',
-          border: `solid 1px ${theme.vars.palette.grey[800]}`,
         }),
         ...(Array.isArray(sx) ? sx : [sx]),
       ]}

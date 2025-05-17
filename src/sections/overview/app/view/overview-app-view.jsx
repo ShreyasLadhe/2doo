@@ -382,7 +382,7 @@ export function OverviewAppView() {
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 12 }}>
           <AppWelcome
-            title={`Namaste 🙏 ${user?.displayName}`}
+            title={`Namaste 🙏 ${user?.displayName?.split(' ')[0]}`}
             description="What are we ticking off today!"
             img={<SeoIllustration hideBackground />}
             action={
@@ -474,16 +474,16 @@ export function OverviewAppView() {
             <IconButton
               color={cardView ? 'primary' : 'default'}
               onClick={() => setCardView((v) => !v)}
-              title={cardView ? 'Switch to List View' : 'Switch to Card View'}
+              title={cardView ? 'Switch to List View' : 'Switch to Grid View'}
               sx={{ display: 'flex', alignItems: 'center' }}
             >
               <Iconify icon={cardView ? 'solar:list-bold' : 'solar:card-bold'} width={24} />
               <Typography variant="body2" sx={{ ml: 1 }}>
-                {cardView ? 'List View' : 'Card View'}
+                {cardView ? 'List View' : 'Grid View'}
               </Typography>
             </IconButton>
 
-            {/* Expand/Compress All button for card view */}
+            {/* Expand/Compress All button for Grid View */}
             {cardView && (
               <Button
                 variant="outlined"
