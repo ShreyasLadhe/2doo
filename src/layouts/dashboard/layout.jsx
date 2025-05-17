@@ -95,7 +95,7 @@ export function DashboardLayout({ sx, cssVars, children, slotProps, layoutQuery 
             startIcon={<DashboardIcon />}
             onClick={() => router.push('/dashboard')}
             sx={{
-              mx: 1,
+              mx: { xs: 0.5, sm: 1 },
               fontWeight: 600,
               letterSpacing: 0.5,
               borderRadius: 2,
@@ -113,7 +113,7 @@ export function DashboardLayout({ sx, cssVars, children, slotProps, layoutQuery 
             startIcon={<ChecklistIcon />}
             onClick={() => router.push('/dashboard/my-tasks')}
             sx={{
-              mx: 1,
+              mx: { xs: 0.5, sm: 1 },
               fontWeight: 600,
               letterSpacing: 0.5,
               borderRadius: 2,
