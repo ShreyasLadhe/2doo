@@ -94,17 +94,37 @@ export function DashboardLayout({ sx, cssVars, children, slotProps, layoutQuery 
             color="inherit"
             startIcon={<DashboardIcon />}
             onClick={() => router.push('/dashboard')}
-            sx={{ mx: 1, fontWeight: 600, letterSpacing: 0.5, borderRadius: 2, textTransform: 'none' }}
+            sx={{
+              mx: 1,
+              fontWeight: 600,
+              letterSpacing: 0.5,
+              borderRadius: 2,
+              textTransform: 'none',
+              '& .MuiButton-startIcon': { mr: { xs: 0, sm: 1 } },
+              '& .MuiButton-label': { display: { xs: 'none', sm: 'block' } },
+            }}
           >
-            Dashboard
+            <Box component="span" sx={{ display: { xs: 'none', sm: 'block' } }}>
+              Dashboard
+            </Box>
           </Button>
           <Button
             color="inherit"
             startIcon={<ChecklistIcon />}
             onClick={() => router.push('/dashboard/my-tasks')}
-            sx={{ mx: 1, fontWeight: 600, letterSpacing: 0.5, borderRadius: 2, textTransform: 'none' }}
+            sx={{
+              mx: 1,
+              fontWeight: 600,
+              letterSpacing: 0.5,
+              borderRadius: 2,
+              textTransform: 'none',
+              '& .MuiButton-startIcon': { mr: { xs: 0, sm: 1 } },
+              '& .MuiButton-label': { display: { xs: 'none', sm: 'block' } },
+            }}
           >
-            My Tasks
+            <Box component="span" sx={{ display: { xs: 'none', sm: 'block' } }}>
+              My Tasks
+            </Box>
           </Button>
           <SettingsButton />
           <AccountDrawer data={_account} />
