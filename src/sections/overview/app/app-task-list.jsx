@@ -40,11 +40,30 @@ import { CustomPopover } from 'src/components/custom-popover';
 
 // ----------------------------------------------------------------------
 
-// Helper to format YYYY-MM-DD to DD-MM-YYYY
+// Helper to format YYYY-MM-DD HH:mm to DD-MM-YYYY HH:mm
 function formatDateDisplay(dateStr) {
   if (!dateStr) return '';
-  const [year, month, day] = dateStr.split('-');
-  return `${day}-${month}-${year}`;
+  const [datePart, timePart] = dateStr.split(' ');
+  const [year, month, day] = datePart.split('-');
+  return `${day}-${month}-${year} ${timePart || '00:00'}`;
+}
+
+// Helper to split date and time
+function splitDateTime(dateStr) {
+  if (!dateStr) return { date: '', time: '' };
+  let datePart = '', timePart = '';
+  if (dateStr.includes('T')) {
+    [datePart, timePart] = dateStr.split('T');
+    timePart = timePart.split(/[+Z]/)[0];
+  } else {
+    [datePart, timePart] = dateStr.split(' ');
+  }
+  const [year, month, day] = datePart.split('-');
+  const [hour = '00', minute = '00'] = (timePart || '').split(':');
+  return {
+    date: `${day}-${month}-${year}`,
+    time: `${hour}:${minute}`,
+  };
 }
 
 export function AppTaskList({
@@ -472,9 +491,20 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
               disabled={row.status === 'completed'}
             />
             <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', ml: 1 }}>
-              <Typography variant="body1" fontWeight={600} sx={{ lineHeight: 1.2 }}>
-                {row.title}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body1" fontWeight={600} sx={{ lineHeight: 1.2 }}>
+                  {row.title}
+                </Typography>
+                {row.isOverdue && (
+                  <Chip
+                    label="Overdue"
+                    size="small"
+                    color="error"
+                    variant="soft"
+                    sx={{ height: 20, fontSize: '0.75rem' }}
+                  />
+                )}
+              </Box>
               {row.tags && row.tags.length > 0 && (
                 <Stack direction="row" spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
                   {row.tags.map((tag) => (
@@ -490,7 +520,9 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
             {row.description}
           </Typography>
         </TableCell>
-        <TableCell sx={row.isOverdue ? { color: (theme) => theme.palette.error.main } : row.status === 'completed' ? { textDecoration: 'line-through', color: 'success.main' } : {}}>{formatDateDisplay(row.due_date)}</TableCell>
+        <TableCell sx={row.isOverdue ? { color: (theme) => theme.palette.error.main } : row.status === 'completed' ? { textDecoration: 'line-through', color: 'success.main' } : {}}>
+          {(() => { const { date, time } = splitDateTime(row.due_date); return <span>{date}<br /><span style={{ color: '#aaa', fontSize: '0.9em' }}>{time}</span></span>; })()}
+        </TableCell>
         <TableCell>
           <Label
             variant="soft"

@@ -37,8 +37,26 @@ import Autocomplete from '@mui/material/Autocomplete';
 
 function formatDateDisplay(dateStr) {
   if (!dateStr) return '';
-  const [year, month, day] = dateStr.split('-');
-  return `${day}-${month}-${year}`;
+  const [datePart, timePart] = dateStr.split(' ');
+  const [year, month, day] = datePart.split('-');
+  return `${day}-${month}-${year} ${timePart || '00:00'}`;
+}
+
+function splitDateTime(dateStr) {
+  if (!dateStr) return { date: '', time: '' };
+  let datePart = '', timePart = '';
+  if (dateStr.includes('T')) {
+    [datePart, timePart] = dateStr.split('T');
+    timePart = timePart.split(/[+Z]/)[0];
+  } else {
+    [datePart, timePart] = dateStr.split(' ');
+  }
+  const [year, month, day] = datePart.split('-');
+  const [hour = '00', minute = '00'] = (timePart || '').split(':');
+  return {
+    date: `${day}-${month}-${year}`,
+    time: `${hour}:${minute}`,
+  };
 }
 
 export default function MyTasksPage() {
@@ -259,14 +277,18 @@ export default function MyTasksPage() {
               sx={{ minWidth: 220, transition: 'min-width 0.2s' }}
             />
           ) : (
-            <IconButton onClick={() => setSearchExpanded(true)}>
-              <Iconify icon="solar:magnifer-bold" />
-            </IconButton>
+            <Tooltip title="Search Tasks">
+              <IconButton onClick={() => setSearchExpanded(true)}>
+                <Iconify icon="solar:magnifer-bold" />
+              </IconButton>
+            </Tooltip>
           )}
-          {/* Date Range Icon/Popover (unchanged) */}
-          <IconButton onClick={e => setDateAnchorEl(e.currentTarget)}>
-            <Iconify icon="solar:calendar-bold" />
-          </IconButton>
+          {/* Date Range Icon/Popover */}
+          <Tooltip title="Filter by Date Range">
+            <IconButton onClick={e => setDateAnchorEl(e.currentTarget)}>
+              <Iconify icon="solar:calendar-bold" />
+            </IconButton>
+          </Tooltip>
           <Popover
             open={Boolean(dateAnchorEl)}
             anchorEl={dateAnchorEl}
@@ -307,9 +329,11 @@ export default function MyTasksPage() {
               sx={{ minWidth: 220, transition: 'min-width 0.2s' }}
             />
           ) : (
-            <IconButton onClick={() => setTagExpanded(true)}>
-              <Iconify icon="solar:tag-bold" />
-            </IconButton>
+            <Tooltip title="Filter by Tags">
+              <IconButton onClick={() => setTagExpanded(true)}>
+                <Iconify icon="solar:tag-bold" />
+              </IconButton>
+            </Tooltip>
           )}
           {/* Card/List View Toggle */}
           <IconButton
@@ -369,359 +393,407 @@ export default function MyTasksPage() {
         <>
           {Object.values(expanded).some(Boolean) ? (
             <Masonry columns={3} spacing={4}>
-              {paginatedTasks.map((task) => (
-                <Card key={task.id} sx={{
-                  borderRadius: 3,
-                  boxShadow: 3,
-                  p: 2,
-                  width: 420,
-                  minHeight: 180,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  border: (theme) =>
-                    task.isOverdue
-                      ? `2px solid ${theme.palette.error.main}`
-                      : task.status === 'completed'
-                        ? `2px solid ${theme.palette.success.main}`
-                        : `2px solid ${theme.palette.primary.main}`,
-                  color: (theme) =>
-                    task.isOverdue
-                      ? theme.palette.error.main
-                      : task.status === 'completed'
-                        ? theme.palette.success.main
-                        : undefined,
-                  '&:hover': {
-                    borderColor: (theme) =>
+              {paginatedTasks.map((task) => {
+                const { date, time } = splitDateTime(task.due_date);
+                return (
+                  <Card key={task.id} sx={{
+                    borderRadius: 3,
+                    boxShadow: 3,
+                    p: 2,
+                    width: 420,
+                    minHeight: 180,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    border: (theme) =>
                       task.isOverdue
-                        ? theme.palette.error.dark
+                        ? `2px solid ${theme.palette.error.main}`
                         : task.status === 'completed'
-                          ? theme.palette.success.dark
-                          : theme.palette.primary.dark,
-                  },
-                }}>
-                  <CardContent sx={{ pb: '0!important', position: 'relative', display: 'flex', flexDirection: 'column', height: '100%' }}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-                      <Stack direction="row" alignItems="center">
-                        <Checkbox
-                          checked={task.status === 'completed'}
-                          onChange={() => handleMarkCompleteTask(task)}
-                          color="success"
-                          sx={{ mr: 1 }}
-                          disabled={task.status === 'completed'}
-                        />
-                        <Typography
-                          variant="h6"
-                          fontWeight={700}
-                          gutterBottom
-                          sx={{
-                            ...(task.status === 'completed' && {
-                              textDecoration: 'line-through',
-                              color: 'success.main',
-                            }),
-                            ...(task.isOverdue && {
-                              color: (theme) => theme.palette.error.main,
-                            }),
-                          }}
-                        >
-                          {task.title}
-                        </Typography>
-                      </Stack>
-                      <Chip label={task.priority} size="small" color={(task.priority === 'high' && 'error') || (task.priority === 'medium' && 'warning') || 'success'} />
-                    </Stack>
-                    <Typography variant="body2" color="text.secondary" sx={{
-                      mb: 1,
-                      ...(task.status === 'completed' && {
-                        textDecoration: 'line-through',
-                        color: 'success.main',
-                      }),
-                      ...(task.isOverdue && {
-                        color: (theme) => theme.palette.error.main,
-                      }),
-                    }}>
-                      {task.description}
-                    </Typography>
-                    {task.subtasks && task.subtasks.length > 0 && (
-                      <Box sx={{ mb: 1 }}>
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          <LinearProgress
-                            variant="determinate"
-                            value={(task.subtasks.filter(sub => sub.completed).length / task.subtasks.length) * 100}
-                            sx={{
-                              flex: 1,
-                              height: 8,
-                              borderRadius: 4,
-                              backgroundColor: (theme) => theme.palette.grey[200],
-                              '& .MuiLinearProgress-bar': {
-                                borderRadius: 4,
-                                backgroundColor: (theme) =>
-                                  task.subtasks.every(sub => sub.completed)
-                                    ? theme.palette.success.main
-                                    : theme.palette.primary.main,
-                              },
-                            }}
+                          ? `2px solid ${theme.palette.success.main}`
+                          : `2px solid ${theme.palette.primary.main}`,
+                    color: (theme) =>
+                      task.isOverdue
+                        ? theme.palette.error.main
+                        : task.status === 'completed'
+                          ? theme.palette.success.main
+                          : undefined,
+                    '&:hover': {
+                      borderColor: (theme) =>
+                        task.isOverdue
+                          ? theme.palette.error.dark
+                          : task.status === 'completed'
+                            ? theme.palette.success.dark
+                            : theme.palette.primary.dark,
+                    },
+                  }}>
+                    <CardContent sx={{ pb: '0!important', position: 'relative', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                        <Stack direction="row" alignItems="center">
+                          <Checkbox
+                            checked={task.status === 'completed'}
+                            onChange={() => handleMarkCompleteTask(task)}
+                            color="success"
+                            sx={{ mr: 1 }}
+                            disabled={task.status === 'completed'}
                           />
-                          <Typography variant="caption" color="text.secondary">
-                            {task.subtasks.filter(sub => sub.completed).length}/{task.subtasks.length}
-                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography
+                              variant="h6"
+                              fontWeight={700}
+                              gutterBottom
+                              sx={{
+                                ...(task.status === 'completed' && {
+                                  textDecoration: 'line-through',
+                                  color: 'success.main',
+                                }),
+                                ...(task.isOverdue && {
+                                  color: (theme) => theme.palette.error.main,
+                                }),
+                              }}
+                            >
+                              {task.title}
+                            </Typography>
+                            {task.isOverdue && (
+                              <Chip
+                                label="Overdue"
+                                size="small"
+                                color="error"
+                                variant="soft"
+                                sx={{ height: 20, fontSize: '0.75rem' }}
+                              />
+                            )}
+                          </Box>
                         </Stack>
-                      </Box>
-                    )}
-                    {expanded[task.id] && task.subtasks && task.subtasks.length > 0 && (
-                      <Box sx={{ mb: 1, mt: 1 }}>
-                        <Typography variant="subtitle2" sx={{ mb: 1 }}>Subtasks</Typography>
-                        <Stack spacing={1}>
-                          {task.subtasks.map((sub) => (
-                            <Box key={sub.id} sx={{ display: 'flex', alignItems: 'center', flexWrap: 'nowrap', p: 1, borderRadius: 1, bgcolor: sub.completed ? 'success.lighter' : 'background.paper', color: sub.completed ? 'success.dark' : 'text.primary', border: '1px solid', borderColor: sub.completed ? 'success.main' : 'grey.200' }}>
-                              <Checkbox
-                                checked={sub.completed}
-                                onChange={async () => {
+                        <Chip label={task.priority} size="small" color={(task.priority === 'high' && 'error') || (task.priority === 'medium' && 'warning') || 'success'} />
+                      </Stack>
+                      <Typography variant="body2" color="text.secondary" sx={{
+                        mb: 1,
+                        ...(task.status === 'completed' && {
+                          textDecoration: 'line-through',
+                          color: 'success.main',
+                        }),
+                        ...(task.isOverdue && {
+                          color: (theme) => theme.palette.error.main,
+                        }),
+                      }}>
+                        {task.description}
+                      </Typography>
+                      {task.subtasks && task.subtasks.length > 0 && (
+                        <Box sx={{ mb: 1 }}>
+                          <Stack direction="row" alignItems="center" spacing={1}>
+                            <LinearProgress
+                              variant="determinate"
+                              value={(task.subtasks.filter(sub => sub.completed).length / task.subtasks.length) * 100}
+                              sx={{
+                                flex: 1,
+                                height: 8,
+                                borderRadius: 4,
+                                backgroundColor: (theme) => theme.palette.grey[200],
+                                '& .MuiLinearProgress-bar': {
+                                  borderRadius: 4,
+                                  backgroundColor: (theme) =>
+                                    task.subtasks.every(sub => sub.completed)
+                                      ? theme.palette.success.main
+                                      : theme.palette.primary.main,
+                                },
+                              }}
+                            />
+                            <Typography variant="caption" color="text.secondary">
+                              {task.subtasks.filter(sub => sub.completed).length}/{task.subtasks.length}
+                            </Typography>
+                          </Stack>
+                        </Box>
+                      )}
+                      {expanded[task.id] && task.subtasks && task.subtasks.length > 0 && (
+                        <Box sx={{ mb: 1, mt: 1 }}>
+                          <Typography variant="subtitle2" sx={{ mb: 1 }}>Subtasks</Typography>
+                          <Stack spacing={1}>
+                            {task.subtasks.map((sub) => (
+                              <Box key={sub.id} sx={{ display: 'flex', alignItems: 'center', flexWrap: 'nowrap', p: 1, borderRadius: 1, bgcolor: sub.completed ? 'success.lighter' : 'background.paper', color: sub.completed ? 'success.dark' : 'text.primary', border: '1px solid', borderColor: sub.completed ? 'success.main' : 'grey.200' }}>
+                                <Checkbox
+                                  checked={sub.completed}
+                                  onChange={async () => {
+                                    await supabase
+                                      .from('subtasks')
+                                      .update({ completed: !sub.completed })
+                                      .eq('id', sub.id);
+                                    fetchTasks();
+                                  }}
+                                  sx={{ mr: 1 }}
+                                />
+                                <Typography
+                                  variant="body2"
+                                  sx={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: sub.completed ? 'line-through' : 'none' }}
+                                >
+                                  {sub.title}
+                                </Typography>
+                                <IconButton size="small" onClick={() => {
+                                  setEditingSubtask({ ...sub, task });
+                                  setEditSubtaskDialogOpen(true);
+                                }} sx={{ color: 'primary.main' }}>
+                                  <Iconify icon="solar:pen-bold" />
+                                </IconButton>
+                                <IconButton size="small" onClick={async () => {
                                   await supabase
                                     .from('subtasks')
-                                    .update({ completed: !sub.completed })
+                                    .delete()
                                     .eq('id', sub.id);
                                   fetchTasks();
-                                }}
-                                sx={{ mr: 1 }}
-                              />
-                              <Typography
-                                variant="body2"
-                                sx={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: sub.completed ? 'line-through' : 'none' }}
-                              >
-                                {sub.title}
-                              </Typography>
-                              <IconButton size="small" onClick={() => {
-                                setEditingSubtask({ ...sub, task });
-                                setEditSubtaskDialogOpen(true);
-                              }} sx={{ color: 'primary.main' }}>
-                                <Iconify icon="solar:pen-bold" />
-                              </IconButton>
-                              <IconButton size="small" onClick={async () => {
-                                await supabase
-                                  .from('subtasks')
-                                  .delete()
-                                  .eq('id', sub.id);
-                                fetchTasks();
-                              }} sx={{ color: 'error.main' }}>
-                                <Iconify icon="solar:trash-bin-trash-bold" />
-                              </IconButton>
-                            </Box>
-                          ))}
-                        </Stack>
-                      </Box>
-                    )}
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                      <Chip label={`Due: ${formatDateDisplay(task.due_date)}`} size="small" icon={<Iconify icon="solar:calendar-bold" />} variant="outlined" />
-                    </Stack>
-                    <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mt: 2 }}>
-                      {/* Tags bottom left */}
-                      <Box>
-                        {task.tags && task.tags.length > 0 && (
-                          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                            {task.tags.map((tag) => (
-                              <Chip key={tag.tag_id} label={tag.name} size="small" color="info" variant="soft" />
+                                }} sx={{ color: 'error.main' }}>
+                                  <Iconify icon="solar:trash-bin-trash-bold" />
+                                </IconButton>
+                              </Box>
                             ))}
                           </Stack>
-                        )}
-                      </Box>
-                      {/* Edit/Delete bottom right */}
-                      <Stack direction="row" spacing={1} alignItems="flex-end">
-                        <IconButton size="small" onClick={() => handleEditTask(task)} sx={{ color: 'primary.main' }}>
-                          <Iconify icon="solar:pen-bold" />
-                        </IconButton>
-                        <IconButton
+                        </Box>
+                      )}
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                        <Chip
+                          label={
+                            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 0 }}>
+                              <span style={{ fontWeight: 500 }}>Due: {date}</span>
+                              <span style={{ color: '#aaa', fontSize: '0.95em', marginLeft: 8 }}>{time}</span>
+                            </Box>
+                          }
                           size="small"
-                          onClick={() => handleDeleteTask(task)}
-                          sx={{ color: 'error.main' }}
-                          title="Delete Task"
-                        >
-                          <Iconify icon="solar:trash-bin-trash-bold" />
-                        </IconButton>
+                          icon={<Iconify icon="solar:calendar-bold" />}
+                          variant="outlined"
+                        />
                       </Stack>
-                    </Stack>
-                  </CardContent>
-                </Card>
-              ))}
+                      <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mt: 2 }}>
+                        {/* Tags bottom left */}
+                        <Box>
+                          {task.tags && task.tags.length > 0 && (
+                            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                              {task.tags.map((tag) => (
+                                <Chip key={tag.tag_id} label={tag.name} size="small" color="info" variant="soft" />
+                              ))}
+                            </Stack>
+                          )}
+                        </Box>
+                        {/* Edit/Delete bottom right */}
+                        <Stack direction="row" spacing={1} alignItems="flex-end">
+                          <IconButton size="small" onClick={() => handleEditTask(task)} sx={{ color: 'primary.main' }}>
+                            <Iconify icon="solar:pen-bold" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDeleteTask(task)}
+                            sx={{ color: 'error.main' }}
+                            title="Delete Task"
+                          >
+                            <Iconify icon="solar:trash-bin-trash-bold" />
+                          </IconButton>
+                        </Stack>
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </Masonry>
           ) : (
             <>
               {chunkArray(paginatedTasks, 3).map((row, rowIndex, arr) => (
                 <Grid container spacing={4} justifyContent="center" alignItems="stretch" sx={{ width: '100%', margin: 0, mb: rowIndex !== arr.length - 1 ? 8 : 0 }} key={rowIndex}>
-                  {row.map((task) => (
-                    <Grid item xs={12} sm={6} md={4} key={task.id} display="flex" justifyContent="center">
-                      <Card sx={{
-                        borderRadius: 3,
-                        boxShadow: 3,
-                        p: 2,
-                        width: 420,
-                        minHeight: 180,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        border: (theme) =>
-                          task.isOverdue
-                            ? `2px solid ${theme.palette.error.main}`
-                            : task.status === 'completed'
-                              ? `2px solid ${theme.palette.success.main}`
-                              : `2px solid ${theme.palette.primary.main}`,
-                        color: (theme) =>
-                          task.isOverdue
-                            ? theme.palette.error.main
-                            : task.status === 'completed'
-                              ? theme.palette.success.main
-                              : undefined,
-                        '&:hover': {
-                          borderColor: (theme) =>
+                  {row.map((task) => {
+                    const { date, time } = splitDateTime(task.due_date);
+                    return (
+                      <Grid item xs={12} sm={6} md={4} key={task.id} display="flex" justifyContent="center">
+                        <Card sx={{
+                          borderRadius: 3,
+                          boxShadow: 3,
+                          p: 2,
+                          width: 420,
+                          minHeight: 180,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          border: (theme) =>
                             task.isOverdue
-                              ? theme.palette.error.dark
+                              ? `2px solid ${theme.palette.error.main}`
                               : task.status === 'completed'
-                                ? theme.palette.success.dark
-                                : theme.palette.primary.dark,
-                        },
-                      }}>
-                        <CardContent sx={{ pb: '0!important', position: 'relative', display: 'flex', flexDirection: 'column', height: '100%' }}>
-                          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-                            <Stack direction="row" alignItems="center">
-                              <Checkbox
-                                checked={task.status === 'completed'}
-                                onChange={() => handleMarkCompleteTask(task)}
-                                color="success"
-                                sx={{ mr: 1 }}
-                                disabled={task.status === 'completed'}
-                              />
-                              <Typography
-                                variant="h6"
-                                fontWeight={700}
-                                gutterBottom
-                                sx={{
-                                  ...(task.status === 'completed' && {
-                                    textDecoration: 'line-through',
-                                    color: 'success.main',
-                                  }),
-                                  ...(task.isOverdue && {
-                                    color: (theme) => theme.palette.error.main,
-                                  }),
-                                }}
-                              >
-                                {task.title}
-                              </Typography>
-                            </Stack>
-                            <Chip label={task.priority} size="small" color={(task.priority === 'high' && 'error') || (task.priority === 'medium' && 'warning') || 'success'} />
-                          </Stack>
-                          <Typography variant="body2" color="text.secondary" sx={{
-                            mb: 1,
-                            ...(task.status === 'completed' && {
-                              textDecoration: 'line-through',
-                              color: 'success.main',
-                            }),
-                            ...(task.isOverdue && {
-                              color: (theme) => theme.palette.error.main,
-                            }),
-                          }}>
-                            {task.description}
-                          </Typography>
-                          {task.subtasks && task.subtasks.length > 0 && (
-                            <Box sx={{ mb: 1 }}>
-                              <Stack direction="row" alignItems="center" spacing={1}>
-                                <LinearProgress
-                                  variant="determinate"
-                                  value={(task.subtasks.filter(sub => sub.completed).length / task.subtasks.length) * 100}
-                                  sx={{
-                                    flex: 1,
-                                    height: 8,
-                                    borderRadius: 4,
-                                    backgroundColor: (theme) => theme.palette.grey[200],
-                                    '& .MuiLinearProgress-bar': {
-                                      borderRadius: 4,
-                                      backgroundColor: (theme) =>
-                                        task.subtasks.every(sub => sub.completed)
-                                          ? theme.palette.success.main
-                                          : theme.palette.primary.main,
-                                    },
-                                  }}
+                                ? `2px solid ${theme.palette.success.main}`
+                                : `2px solid ${theme.palette.primary.main}`,
+                          color: (theme) =>
+                            task.isOverdue
+                              ? theme.palette.error.main
+                              : task.status === 'completed'
+                                ? theme.palette.success.main
+                                : undefined,
+                          '&:hover': {
+                            borderColor: (theme) =>
+                              task.isOverdue
+                                ? theme.palette.error.dark
+                                : task.status === 'completed'
+                                  ? theme.palette.success.dark
+                                  : theme.palette.primary.dark,
+                          },
+                        }}>
+                          <CardContent sx={{ pb: '0!important', position: 'relative', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                              <Stack direction="row" alignItems="center">
+                                <Checkbox
+                                  checked={task.status === 'completed'}
+                                  onChange={() => handleMarkCompleteTask(task)}
+                                  color="success"
+                                  sx={{ mr: 1 }}
+                                  disabled={task.status === 'completed'}
                                 />
-                                <Typography variant="caption" color="text.secondary">
-                                  {task.subtasks.filter(sub => sub.completed).length}/{task.subtasks.length}
-                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Typography
+                                    variant="h6"
+                                    fontWeight={700}
+                                    gutterBottom
+                                    sx={{
+                                      ...(task.status === 'completed' && {
+                                        textDecoration: 'line-through',
+                                        color: 'success.main',
+                                      }),
+                                      ...(task.isOverdue && {
+                                        color: (theme) => theme.palette.error.main,
+                                      }),
+                                    }}
+                                  >
+                                    {task.title}
+                                  </Typography>
+                                  {task.isOverdue && (
+                                    <Chip
+                                      label="Overdue"
+                                      size="small"
+                                      color="error"
+                                      variant="soft"
+                                      sx={{ height: 20, fontSize: '0.75rem' }}
+                                    />
+                                  )}
+                                </Box>
                               </Stack>
-                            </Box>
-                          )}
-                          {expanded[task.id] && task.subtasks && task.subtasks.length > 0 && (
-                            <Box sx={{ mb: 1, mt: 1 }}>
-                              <Typography variant="subtitle2" sx={{ mb: 1 }}>Subtasks</Typography>
-                              <Stack spacing={1}>
-                                {task.subtasks.map((sub) => (
-                                  <Box key={sub.id} sx={{ display: 'flex', alignItems: 'center', flexWrap: 'nowrap', p: 1, borderRadius: 1, bgcolor: sub.completed ? 'success.lighter' : 'background.paper', color: sub.completed ? 'success.dark' : 'text.primary', border: '1px solid', borderColor: sub.completed ? 'success.main' : 'grey.200' }}>
-                                    <Checkbox
-                                      checked={sub.completed}
-                                      onChange={async () => {
+                              <Chip label={task.priority} size="small" color={(task.priority === 'high' && 'error') || (task.priority === 'medium' && 'warning') || 'success'} />
+                            </Stack>
+                            <Typography variant="body2" color="text.secondary" sx={{
+                              mb: 1,
+                              ...(task.status === 'completed' && {
+                                textDecoration: 'line-through',
+                                color: 'success.main',
+                              }),
+                              ...(task.isOverdue && {
+                                color: (theme) => theme.palette.error.main,
+                              }),
+                            }}>
+                              {task.description}
+                            </Typography>
+                            {task.subtasks && task.subtasks.length > 0 && (
+                              <Box sx={{ mb: 1 }}>
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                  <LinearProgress
+                                    variant="determinate"
+                                    value={(task.subtasks.filter(sub => sub.completed).length / task.subtasks.length) * 100}
+                                    sx={{
+                                      flex: 1,
+                                      height: 8,
+                                      borderRadius: 4,
+                                      backgroundColor: (theme) => theme.palette.grey[200],
+                                      '& .MuiLinearProgress-bar': {
+                                        borderRadius: 4,
+                                        backgroundColor: (theme) =>
+                                          task.subtasks.every(sub => sub.completed)
+                                            ? theme.palette.success.main
+                                            : theme.palette.primary.main,
+                                      },
+                                    }}
+                                  />
+                                  <Typography variant="caption" color="text.secondary">
+                                    {task.subtasks.filter(sub => sub.completed).length}/{task.subtasks.length}
+                                  </Typography>
+                                </Stack>
+                              </Box>
+                            )}
+                            {expanded[task.id] && task.subtasks && task.subtasks.length > 0 && (
+                              <Box sx={{ mb: 1, mt: 1 }}>
+                                <Typography variant="subtitle2" sx={{ mb: 1 }}>Subtasks</Typography>
+                                <Stack spacing={1}>
+                                  {task.subtasks.map((sub) => (
+                                    <Box key={sub.id} sx={{ display: 'flex', alignItems: 'center', flexWrap: 'nowrap', p: 1, borderRadius: 1, bgcolor: sub.completed ? 'success.lighter' : 'background.paper', color: sub.completed ? 'success.dark' : 'text.primary', border: '1px solid', borderColor: sub.completed ? 'success.main' : 'grey.200' }}>
+                                      <Checkbox
+                                        checked={sub.completed}
+                                        onChange={async () => {
+                                          await supabase
+                                            .from('subtasks')
+                                            .update({ completed: !sub.completed })
+                                            .eq('id', sub.id);
+                                          fetchTasks();
+                                        }}
+                                        sx={{ mr: 1 }}
+                                      />
+                                      <Typography
+                                        variant="body2"
+                                        sx={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: sub.completed ? 'line-through' : 'none' }}
+                                      >
+                                        {sub.title}
+                                      </Typography>
+                                      <IconButton size="small" onClick={() => {
+                                        setEditingSubtask({ ...sub, task });
+                                        setEditSubtaskDialogOpen(true);
+                                      }} sx={{ color: 'primary.main' }}>
+                                        <Iconify icon="solar:pen-bold" />
+                                      </IconButton>
+                                      <IconButton size="small" onClick={async () => {
                                         await supabase
                                           .from('subtasks')
-                                          .update({ completed: !sub.completed })
+                                          .delete()
                                           .eq('id', sub.id);
                                         fetchTasks();
-                                      }}
-                                      sx={{ mr: 1 }}
-                                    />
-                                    <Typography
-                                      variant="body2"
-                                      sx={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: sub.completed ? 'line-through' : 'none' }}
-                                    >
-                                      {sub.title}
-                                    </Typography>
-                                    <IconButton size="small" onClick={() => {
-                                      setEditingSubtask({ ...sub, task });
-                                      setEditSubtaskDialogOpen(true);
-                                    }} sx={{ color: 'primary.main' }}>
-                                      <Iconify icon="solar:pen-bold" />
-                                    </IconButton>
-                                    <IconButton size="small" onClick={async () => {
-                                      await supabase
-                                        .from('subtasks')
-                                        .delete()
-                                        .eq('id', sub.id);
-                                      fetchTasks();
-                                    }} sx={{ color: 'error.main' }}>
-                                      <Iconify icon="solar:trash-bin-trash-bold" />
-                                    </IconButton>
-                                  </Box>
-                                ))}
-                              </Stack>
-                            </Box>
-                          )}
-                          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                            <Chip label={`Due: ${formatDateDisplay(task.due_date)}`} size="small" icon={<Iconify icon="solar:calendar-bold" />} variant="outlined" />
-                          </Stack>
-                          <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mt: 2 }}>
-                            {/* Tags bottom left */}
-                            <Box>
-                              {task.tags && task.tags.length > 0 && (
-                                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                                  {task.tags.map((tag) => (
-                                    <Chip key={tag.tag_id} label={tag.name} size="small" color="info" variant="soft" />
+                                      }} sx={{ color: 'error.main' }}>
+                                        <Iconify icon="solar:trash-bin-trash-bold" />
+                                      </IconButton>
+                                    </Box>
                                   ))}
                                 </Stack>
-                              )}
-                            </Box>
-                            {/* Edit/Delete bottom right */}
-                            <Stack direction="row" spacing={1} alignItems="flex-end">
-                              <IconButton size="small" onClick={() => handleEditTask(task)} sx={{ color: 'primary.main' }}>
-                                <Iconify icon="solar:pen-bold" />
-                              </IconButton>
-                              <IconButton
+                              </Box>
+                            )}
+                            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                              <Chip
+                                label={
+                                  <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 0 }}>
+                                    <span style={{ fontWeight: 500 }}>Due: {date}</span>
+                                    <span style={{ color: '#aaa', fontSize: '0.95em', marginLeft: 8 }}>{time}</span>
+                                  </Box>
+                                }
                                 size="small"
-                                onClick={() => handleDeleteTask(task)}
-                                sx={{ color: 'error.main' }}
-                                title="Delete Task"
-                              >
-                                <Iconify icon="solar:trash-bin-trash-bold" />
-                              </IconButton>
+                                icon={<Iconify icon="solar:calendar-bold" />}
+                                variant="outlined"
+                              />
                             </Stack>
-                          </Stack>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
+                            <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mt: 2 }}>
+                              {/* Tags bottom left */}
+                              <Box>
+                                {task.tags && task.tags.length > 0 && (
+                                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                                    {task.tags.map((tag) => (
+                                      <Chip key={tag.tag_id} label={tag.name} size="small" color="info" variant="soft" />
+                                    ))}
+                                  </Stack>
+                                )}
+                              </Box>
+                              {/* Edit/Delete bottom right */}
+                              <Stack direction="row" spacing={1} alignItems="flex-end">
+                                <IconButton size="small" onClick={() => handleEditTask(task)} sx={{ color: 'primary.main' }}>
+                                  <Iconify icon="solar:pen-bold" />
+                                </IconButton>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleDeleteTask(task)}
+                                  sx={{ color: 'error.main' }}
+                                  title="Delete Task"
+                                >
+                                  <Iconify icon="solar:trash-bin-trash-bold" />
+                                </IconButton>
+                              </Stack>
+                            </Stack>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    );
+                  })}
                   {/* Fill empty columns if needed */}
                   {Array.from({ length: 3 - row.length }).map((_, idx) => (
                     <Grid item xs={12} sm={6} md={4} key={`empty-${idx}`} style={{ visibility: 'hidden' }} />

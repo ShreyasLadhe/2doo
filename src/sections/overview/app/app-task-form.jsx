@@ -21,7 +21,7 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import Autocomplete from '@mui/material/Autocomplete';
 import Chip from '@mui/material/Chip';
 
@@ -31,19 +31,21 @@ import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
-function formatDate(date) {
+function formatDateTime(date) {
   if (!date) return '';
   const d = new Date(date);
   const month = `${d.getMonth() + 1}`.padStart(2, '0');
   const day = `${d.getDate()}`.padStart(2, '0');
-  return `${d.getFullYear()}-${month}-${day}`;
+  const hours = `${d.getHours()}`.padStart(2, '0');
+  const minutes = `${d.getMinutes()}`.padStart(2, '0');
+  return `${d.getFullYear()}-${month}-${day} ${hours}:${minutes}`;
 }
 
 export function AppTaskForm({ open, onClose, onSubmit, editTask = null }) {
   const { user } = useAuthContext();
   const [hasSubtasks, setHasSubtasks] = useState(false);
   const [subtasks, setSubtasks] = useState(['']);
-  const [dueDate, setDueDate] = useState(null);
+  const [dueDateTime, setDueDateTime] = useState(null);
   const [priority, setPriority] = useState('');
   const [status, setStatus] = useState('');
   const [description, setDescription] = useState('');
@@ -69,7 +71,7 @@ export function AppTaskForm({ open, onClose, onSubmit, editTask = null }) {
       if (editTask) {
         setHasSubtasks(editTask.subtasks?.length > 0);
         setSubtasks(editTask.subtasks?.map(st => st.title) || ['']);
-        setDueDate(new Date(editTask.due_date));
+        setDueDateTime(editTask.due_date ? new Date(editTask.due_date) : null);
         setPriority(['high', 'medium', 'low'].includes(editTask.priority) ? editTask.priority : '');
         setStatus(['todo', 'in-progress', 'completed'].includes(editTask.status) ? editTask.status : '');
         setDescription(editTask.description);
@@ -77,7 +79,7 @@ export function AppTaskForm({ open, onClose, onSubmit, editTask = null }) {
       } else {
         setHasSubtasks(false);
         setSubtasks(['']);
-        setDueDate(null);
+        setDueDateTime(null);
         setPriority('');
         setStatus('');
         setDescription('');
@@ -120,7 +122,7 @@ export function AppTaskForm({ open, onClose, onSubmit, editTask = null }) {
     const taskData = {
       title: formData.get('title'),
       description,
-      due_date: formatDate(dueDate),
+      due_date: formatDateTime(dueDateTime),
       priority,
       status,
       user_id: user?.id,
@@ -278,16 +280,16 @@ export function AppTaskForm({ open, onClose, onSubmit, editTask = null }) {
             />
 
             <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <DatePicker
-                label="Due Date"
-                value={dueDate}
-                onChange={setDueDate}
-                format="dd-MM-yyyy"
+              <DateTimePicker
+                label="Due Date & Time"
+                value={dueDateTime}
+                onChange={setDueDateTime}
+                format="dd-MM-yyyy HH:mm"
                 slotProps={{
                   textField: {
                     fullWidth: true,
                     required: true,
-                    name: 'dueDate',
+                    name: 'dueDateTime',
                   },
                 }}
               />
