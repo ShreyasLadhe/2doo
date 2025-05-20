@@ -134,11 +134,13 @@ export default function MyTasksPage() {
   // Determine initial view based on screen width
   useEffect(() => {
     const handleResize = () => {
-      // Assuming 'sm' breakpoint is 600px. Use card view if screen width is less than 600px
+      // Force card view if screen width is less than 600px
       if (window.innerWidth < 600) {
         setCardView(true);
-      } else {
-        setCardView(false);
+        // Remove automatic expansion on mobile
+        // const newExpanded = {};
+        // paginatedTasks.forEach(task => { newExpanded[task.id] = true; });
+        // setExpanded(newExpanded);
       }
     };
 
@@ -415,12 +417,15 @@ export default function MyTasksPage() {
               </IconButton>
             </Tooltip>
           )}
-          {/* Card/List View Toggle */}
+          {/* Card/List View Toggle - Hidden on mobile */}
           <IconButton
             color={cardView ? 'primary' : 'default'}
             onClick={handleViewSwitch}
             title={cardView ? 'Switch to List View' : 'Switch to Grid View'}
-            sx={{ display: 'flex', alignItems: 'center' }}
+            sx={{
+              display: { xs: 'none', sm: 'flex' },
+              alignItems: 'center'
+            }}
           >
             <Iconify icon={cardView ? 'solar:list-bold' : 'solar:card-bold'} width={24} />
             <Typography variant="body2" sx={{ ml: 1, display: { xs: 'none', sm: 'block' } }}>
@@ -441,7 +446,7 @@ export default function MyTasksPage() {
           >
             New Task
           </Button>
-          {/* Expand/Compress All button for Grid View */}
+          {/* Expand/Compress All button for Grid View - Hidden on mobile */}
           {cardView && (
             <Button
               variant="outlined"
@@ -592,7 +597,8 @@ export default function MyTasksPage() {
                           </Stack>
                         </Box>
                       )}
-                      {expanded[task.id] && task.subtasks && task.subtasks.length > 0 && (
+                      {/* Always show subtasks on mobile (cardView is true) or if expanded on desktop */}
+                      {(cardView || expanded[task.id]) && task.subtasks && task.subtasks.length > 0 && (
                         <Box sx={{ mb: 1, mt: 1 }}>
                           <Typography variant="subtitle2" sx={{ mb: 1 }}>Subtasks</Typography>
                           <Stack spacing={1}>
@@ -814,7 +820,8 @@ export default function MyTasksPage() {
                                 </Stack>
                               </Box>
                             )}
-                            {expanded[task.id] && task.subtasks && task.subtasks.length > 0 && (
+                            {/* Always show subtasks on mobile (cardView is true) or if expanded on desktop */}
+                            {(cardView || expanded[task.id]) && task.subtasks && task.subtasks.length > 0 && (
                               <Box sx={{ mb: 1, mt: 1 }}>
                                 <Typography variant="subtitle2" sx={{ mb: 1 }}>Subtasks</Typography>
                                 <Stack spacing={1}>

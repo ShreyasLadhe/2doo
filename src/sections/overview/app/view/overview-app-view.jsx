@@ -141,11 +141,9 @@ export function OverviewAppView() {
   // Determine initial view based on screen width
   useEffect(() => {
     const handleResize = () => {
-      // Assuming 'sm' breakpoint is 600px. Use card view if screen width is less than 600px
+      // Force card view if screen width is less than 600px
       if (window.innerWidth < 600) {
         setCardView(true);
-      } else {
-        setCardView(false);
       }
     };
 
@@ -491,12 +489,15 @@ export function OverviewAppView() {
                 </IconButton>
               </Tooltip>
             )}
-            {/* Card/List View Toggle */}
+            {/* Card/List View Toggle - Hidden on mobile */}
             <IconButton
               color={cardView ? 'primary' : 'default'}
               onClick={() => setCardView((v) => !v)}
               title={cardView ? 'Switch to List View' : 'Switch to Grid View'}
-              sx={{ display: 'flex', alignItems: 'center' }}
+              sx={{
+                display: { xs: 'none', sm: 'flex' },
+                alignItems: 'center'
+              }}
             >
               <Iconify icon={cardView ? 'solar:list-bold' : 'solar:card-bold'} width={24} />
               <Typography variant="body2" sx={{ ml: 1, display: { xs: 'none', sm: 'block' } }}>
@@ -504,7 +505,7 @@ export function OverviewAppView() {
               </Typography>
             </IconButton>
 
-            {/* Expand/Compress All button for Grid View */}
+            {/* Expand/Compress All button for Grid View - Hidden on mobile */}
             {cardView && (
               <Button
                 variant="outlined"
@@ -527,7 +528,10 @@ export function OverviewAppView() {
                     setExpanded(newExpanded);
                   }
                 }}
-                sx={{ ml: 1, display: { xs: 'none', sm: 'flex' } }}
+                sx={{
+                  ml: 1,
+                  display: { xs: 'none', sm: 'flex' }
+                }}
               >
                 {Object.values(expanded).filter(Boolean).length === paginatedTasks.length ? 'Compress All' : 'Expand All'}
               </Button>
@@ -670,7 +674,7 @@ export function OverviewAppView() {
                               </Stack>
                             </Box>
                           )}
-                          {expanded[task.id] && task.subtasks && task.subtasks.length > 0 && (
+                          {(cardView || expanded[task.id]) && task.subtasks && task.subtasks.length > 0 && (
                             <Box sx={{ mb: 1, mt: 1 }}>
                               <Typography variant="subtitle2" sx={{ mb: 1 }}>Subtasks</Typography>
                               <Stack spacing={1}>
@@ -875,7 +879,7 @@ export function OverviewAppView() {
                                     </Stack>
                                   </Box>
                                 )}
-                                {expanded[task.id] && task.subtasks && task.subtasks.length > 0 && (
+                                {(cardView || expanded[task.id]) && task.subtasks && task.subtasks.length > 0 && (
                                   <Box sx={{ mb: 1, mt: 1 }}>
                                     <Typography variant="subtitle2" sx={{ mb: 1 }}>Subtasks</Typography>
                                     <Stack spacing={1}>

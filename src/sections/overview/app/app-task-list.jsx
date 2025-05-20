@@ -119,6 +119,23 @@ export function AppTaskList({
   ...other
 }) {
   const [viewTask, setViewTask] = useState(null);
+  const [expanded, setExpanded] = useState({});
+
+  // Set expanded state for mobile devices
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 600) {
+        // Set all cards to expanded on mobile
+        const newExpanded = {};
+        tableData.forEach(task => { newExpanded[task.id] = true; });
+        setExpanded(newExpanded);
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [tableData]);
 
   // Handler to fetch latest subtasks before opening dialog
   const handleViewTask = async (row) => {
@@ -149,7 +166,10 @@ export function AppTaskList({
   );
 
   return (
-    <Card sx={sx} {...other}>
+    <Card sx={{
+      ...sx,
+      display: { xs: 'none', sm: 'block' } // Hide on mobile screens
+    }} {...other}>
       <CardHeader
         title={title}
         subheader={subheader}
