@@ -975,11 +975,12 @@ export default function MyTasksPage() {
             subheader="Manage all your tasks in one place."
             tableData={paginatedListTasks}
             headCells={[
-              { id: 'title', label: 'Task', minWidth: 200 },
-              { id: 'description', label: 'Description', minWidth: 220 },
+              { id: 'title', label: 'Task', minWidth: 500 },
+              { id: 'description', label: 'Description', minWidth: 260 },
+              { id: 'subtasks', label: 'Subtasks', minWidth: 120 },
               { id: 'dueDate', label: 'Due Date', minWidth: 120 },
-              { id: 'priority', label: 'Priority', minWidth: 100 },
-              { id: 'actions', label: 'Actions', minWidth: 150 },
+              { id: 'priority', label: 'Priority' },
+              { id: 'actions', label: 'Actions' },
             ]}
             hideViewAll={true}
             onEditTask={handleEditTask}
