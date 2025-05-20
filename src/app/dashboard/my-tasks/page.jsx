@@ -691,8 +691,8 @@ export default function MyTasksPage() {
                               <Chip
                                 label={
                                   <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 0 }}>
-                                    <span style={{ fontWeight: 500, textDecoration: 'line-through' }}>Due: {date}</span>
-                                    <span style={{ color: '#aaa', fontSize: '0.95em', marginLeft: 8, textDecoration: 'line-through' }}>{time}</span>
+                                    <span style={{ fontWeight: 500 }}>Due: {date}</span>
+                                    <span style={{ color: '#aaa', fontSize: '0.95em', marginLeft: 8 }}>{time}</span>
                                   </Box>
                                 }
                                 size="small"
@@ -905,8 +905,8 @@ export default function MyTasksPage() {
                                     <Chip
                                       label={
                                         <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 0 }}>
-                                          <span style={{ fontWeight: 500, textDecoration: 'line-through' }}>Due: {date}</span>
-                                          <span style={{ color: '#aaa', fontSize: '0.95em', marginLeft: 8, textDecoration: 'line-through' }}>{time}</span>
+                                          <span style={{ fontWeight: 500 }}>Due: {date}</span>
+                                          <span style={{ color: '#aaa', fontSize: '0.95em', marginLeft: 8 }}>{time}</span>
                                         </Box>
                                       }
                                       size="small"
