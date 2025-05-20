@@ -12,8 +12,8 @@ export function AppWelcome({ title, description, action, sx, ...other }) {
     <Box
       sx={[
         (theme) => ({
-          pt: 8,
-          pb: 8,
+          pt: 3,
+          pb: 0,
           px: 3,
           borderRadius: 2,
           display: 'flex',
@@ -59,12 +59,6 @@ export function AppWelcome({ title, description, action, sx, ...other }) {
         >
           {description}
         </Typography>
-
-        {action && (
-          <Box sx={{ transform: 'scale(1.2)' }}>
-            {action}
-          </Box>
-        )}
       </Box>
     </Box>
   );

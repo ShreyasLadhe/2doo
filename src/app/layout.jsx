@@ -1,4 +1,5 @@
 import 'src/global.css';
+import 'src/styles/strikethrough.css';
 
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';

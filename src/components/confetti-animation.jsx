@@ -24,10 +24,10 @@ export function ConfettiAnimation() {
             width={windowSize.width}
             height={windowSize.height}
             recycle={false}
-            numberOfPieces={300}
-            gravity={0.2}
-            initialVelocityY={5}
-            tweenDuration={5000}
+            numberOfPieces={200}
+            gravity={0.3}
+            initialVelocityY={10}
+            tweenDuration={1000}
             style={{ position: 'fixed', top: 0, left: 0, zIndex: 9999 }}
         />
     );

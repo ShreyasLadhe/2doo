@@ -56,7 +56,7 @@ export function AppCurrentDownload({ title, subheader, tasks = [], sx, view = 'w
   const chartOptions = useChart({
     chart: { sparkline: { enabled: true } },
     colors: chartColors,
-    labels: chartLabels,
+    labels: ['To Do', 'In Progress', 'Completed', 'Overdue'],
     stroke: { width: 0 },
     tooltip: {
       y: {
@@ -75,6 +75,12 @@ export function AppCurrentDownload({ title, subheader, tasks = [], sx, view = 'w
             },
           },
         },
+      },
+    },
+    // Ensure all label text colors are the same as primary text color
+    legend: {
+      labels: {
+        colors: theme.palette.text.primary,
       },
     },
   });

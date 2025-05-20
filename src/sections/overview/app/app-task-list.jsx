@@ -36,6 +36,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Pagination from '@mui/material/Pagination';
 import Autocomplete from '@mui/material/Autocomplete';
+import Tooltip from '@mui/material/Tooltip';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -157,41 +158,75 @@ export function AppTaskList({
         sx={{ mb: 3 }}
         action={
           onToggleDense && (
-            <Button
-              variant={dense ? 'contained' : 'outlined'}
-              color={dense ? 'primary' : 'inherit'}
-              size="small"
-              onClick={onToggleDense}
-              sx={{ minWidth: 80 }}
-            >
-              Dense
-            </Button>
+            <Tooltip title={dense ? 'Switch to default spacing' : 'Switch to dense spacing'}>
+              <IconButton
+                color={dense ? 'primary' : 'default'}
+                size="small"
+                onClick={onToggleDense}
+                sx={{ width: 40, height: 40 }}
+              >
+                <Iconify icon={dense ? 'solar:list-bold' : 'solar:list-down-bold-duotone'} width={24} />
+              </IconButton>
+            </Tooltip>
           )
         }
       />
 
-      <Scrollbar sx={{ minHeight: 402, maxWidth: '100%' }}>
-        <Table sx={{ minWidth: 1100, width: '100%', tableLayout: 'fixed' }} size={dense ? 'small' : 'medium'}>
-          <TableHeadCustom headCells={headCells} />
+      {tableData?.length === 0 ? (
+        <Box sx={{
+          textAlign: 'center',
+          py: { xs: 6, sm: 8 },
+          px: { xs: 2, sm: 3 },
+        }}>
+          <Typography
+            variant="h6"
+            color="text.secondary"
+            sx={{
+              fontStyle: 'italic',
+              whiteSpace: 'normal',
+              wordBreak: 'break-word',
+              fontSize: { xs: '1rem', sm: '1.25rem' }
+            }}
+          >
+            Yay! No tasks here. Grab a coffee and relax ☕
+          </Typography>
+        </Box>
+      ) : (
+        <Scrollbar sx={{ minHeight: 402, maxWidth: '100%' }}>
+          <Table
+            sx={{
+              minWidth: { xs: '100%', sm: 1100 },
+              width: '100%',
+              tableLayout: 'fixed',
+              mx: 'auto',
+              '& .MuiTableCell-root': {
+                px: { xs: 1, sm: 2 },
+                py: { xs: 1.5, sm: 2 },
+              }
+            }}
+            size={dense ? 'small' : 'medium'}
+          >
+            <TableHeadCustom headCells={headCells} />
 
-          <TableBody>
-            {tableData?.map((row) => (
-              <RowItem
-                key={row.id}
-                row={row}
-                onView={() => handleViewTask(row)}
-                onEditTask={onEditTask}
-                onDeleteTask={onDeleteTask}
-                onMarkCompleteTask={onMarkCompleteTask}
-                dense={dense}
-                animatingTaskId={animatingTaskId}
-              />
-            ))}
-          </TableBody>
-        </Table>
-      </Scrollbar>
+            <TableBody>
+              {tableData?.map((row) => (
+                <RowItem
+                  key={row.id}
+                  row={row}
+                  onView={() => handleViewTask(row)}
+                  onEditTask={onEditTask}
+                  onDeleteTask={onDeleteTask}
+                  onMarkCompleteTask={onMarkCompleteTask}
+                  dense={dense}
+                  animatingTaskId={animatingTaskId}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </Scrollbar>
+      )}
 
-      {totalPages > 1 && (
+      {totalPages > 1 && tableData?.length > 0 && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
           <Pagination
             count={totalPages}
@@ -583,10 +618,18 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
           </Typography>
         </TableCell>
         <TableCell sx={row.isOverdue ? { color: (theme) => theme.palette.error.main } : row.status === 'completed' ? { textDecoration: 'line-through', color: 'success.main' } : {}}>
-          {row.status === 'completed' && row.completed_at ? (
-            (() => { const { date, time } = splitDateTime(row.completed_at); return <span>Completed: {date}<br /><span style={{ color: '#aaa', fontSize: '0.9em' }}>{time}</span></span>; })()
+          {row.status === 'completed' ? (
+            <>
+              {/* Always show Due Date/Time */}
+              {(() => { const { date, time } = splitDateTime(row.due_date); return <span>{date}{" "}<span style={{ color: '#aaa', fontSize: '0.9em' }}>{time}</span></span>; })()}
+              {/* Show Completed Date/Time if available */}
+              {row.completed_at && (
+                <span style={{ display: 'block', marginTop: '8px' }}>{(() => { const { date, time } = splitAndFormatCompletedAt(row.completed_at); return <span>Completed: {date}{" "}<span style={{ color: '#aaa', fontSize: '0.9em' }}>{time}</span></span>; })()}</span>
+              )}
+            </>
           ) : (
-            (() => { const { date, time } = splitDateTime(row.due_date); return <span>Due: {date}<br /><span style={{ color: '#aaa', fontSize: '0.9em' }}>{time}</span></span>; })()
+            /* Only show Due Date/Time for incomplete tasks */
+            (() => { const { date, time } = splitDateTime(row.due_date); return <span>{date}{" "}<span style={{ color: '#aaa', fontSize: '0.9em' }}>{time}</span></span>; })()
           )}
         </TableCell>
         <TableCell>

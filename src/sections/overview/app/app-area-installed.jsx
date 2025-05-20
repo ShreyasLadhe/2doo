@@ -30,19 +30,34 @@ export function AppAreaInstalled({ title, subheader, tasks, sx, view = 'week', o
       { name: 'To Do', data: Array(len).fill(0) },
       { name: 'In Progress', data: Array(len).fill(0) },
       { name: 'Completed', data: Array(len).fill(0) },
+      { name: 'Overdue', data: Array(len).fill(0) },
     ];
+
+    // Helper to check if a task is overdue (within the context of tasks due in the period)
+    const isOverdueFiltered = (task) => {
+      const now = dayjs();
+      const due = dayjs(task.due_date);
+      return due.isValid() && due.isBefore(now) && task.status !== 'completed';
+    };
+
     tasks.forEach(task => {
       const taskDate = dayjs(task.due_date);
-      const dayIndex = view === 'week'
-        ? taskDate.diff(startOfWeek, 'day')
-        : taskDate.diff(startOfMonth, 'day');
-      if (dayIndex >= 0 && dayIndex < len) {
-        if (task.status === 'completed') {
-          series[2].data[dayIndex]++;
-        } else if (task.status === 'in_progress' || task.status === 'in-progress') {
-          series[1].data[dayIndex]++;
-        } else {
-          series[0].data[dayIndex]++;
+      // Only process tasks with valid due dates within the selected range
+      if (taskDate.isValid()) {
+        const dayIndex = view === 'week'
+          ? taskDate.diff(startOfWeek, 'day')
+          : taskDate.diff(startOfMonth, 'day');
+
+        if (dayIndex >= 0 && dayIndex < len) {
+          if (isOverdueFiltered(task)) {
+            series[3].data[dayIndex]++; // Use index 3 for Overdue
+          } else if (task.status === 'completed') {
+            series[2].data[dayIndex]++;
+          } else if (task.status === 'in_progress' || task.status === 'in-progress') {
+            series[1].data[dayIndex]++;
+          } else {
+            series[0].data[dayIndex]++;
+          }
         }
       }
     });
@@ -50,9 +65,10 @@ export function AppAreaInstalled({ title, subheader, tasks, sx, view = 'week', o
   };
 
   const chartColors = [
-    theme.palette.warning.main,    // To Do
-    theme.palette.info.main,       // In Progress
+    theme.palette.info.light,       // To Do (Swapped from In Progress)
+    theme.palette.warning.light,    // In Progress (Swapped from To Do)
     theme.palette.success.main,    // Completed
+    theme.palette.error.main,      // Overdue color
   ];
 
   const chartOptions = useChart({
@@ -115,11 +131,12 @@ export function AppAreaInstalled({ title, subheader, tasks, sx, view = 'week', o
       />
       <ChartLegends
         colors={chartColors}
-        labels={['To Do', 'In Progress', 'Completed']}
+        labels={['To Do', 'In Progress', 'Completed', 'Overdue']}
         values={[
           series[0].data.reduce((a, b) => a + b, 0),
           series[1].data.reduce((a, b) => a + b, 0),
           series[2].data.reduce((a, b) => a + b, 0),
+          series[3].data.reduce((a, b) => a + b, 0),
         ].map(value => fNumber(value))}
         sx={{ px: 3, gap: 3 }}
       />
