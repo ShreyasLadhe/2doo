@@ -181,19 +181,6 @@ export function HomeHero({ sx, ...other }) {
               </Box>
             </span>
           </Button>
-
-          <Link
-            color="inherit"
-            variant="body2"
-            target="_blank"
-            rel="noopener"
-            href={paths.freeUI}
-            underline="always"
-            sx={{ gap: 0.75, alignItems: 'center', display: 'inline-flex' }}
-          >
-            <Iconify width={16} icon="eva:external-link-fill" />
-            Get free version
-          </Link>
         </Stack>
       </m.div>
 

@@ -84,7 +84,7 @@ const renderDescription = () => (
       }}
     >
       Get started with
-      <br /> Minimal kit
+      <br /> 2DOO
       <Box
         component="span"
         sx={(theme) => ({
@@ -115,26 +115,7 @@ const renderDescription = () => (
           rel="noopener"
           href={paths.minimalStore}
         >
-          Purchase now
-        </Button>
-      </m.div>
-
-      <m.div variants={varFade('inRight', { distance: 24 })}>
-        <Button
-          color="inherit"
-          size="large"
-          variant="outlined"
-          target="_blank"
-          rel="noopener"
-          href={paths.freeUI}
-          startIcon={<Iconify width={16} icon="eva:external-link-fill" sx={{ mr: 0.5 }} />}
-          sx={{
-            color: 'common.white',
-            borderColor: 'common.white',
-            '&:hover': { borderColor: 'currentColor' },
-          }}
-        >
-          Get free version
+          Sign Up
         </Button>
       </m.div>
     </Box>

@@ -11,7 +11,7 @@ import { HomeZoneUI } from '../home-zone-ui';
 import { HomeMinimal } from '../home-minimal';
 import { HomePricing } from '../home-pricing';
 import { HomeForDesigner } from '../home-for-designer';
-import { HomeTestimonials } from '../home-testimonials';
+import { HomeMindFocus } from '../home-mind-focus';
 import { HomeIntegrations } from '../home-integrations';
 import { HomeAdvertisement } from '../home-advertisement';
 import { HomeHugePackElements } from '../home-hugepack-elements';
@@ -50,7 +50,7 @@ export function HomeView() {
 
         <HomePricing /> */}
 
-        <HomeTestimonials />
+        <HomeMindFocus />
 
         <HomeFAQs />
 
