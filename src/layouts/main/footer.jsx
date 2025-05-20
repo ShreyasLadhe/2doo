@@ -182,6 +182,7 @@ export function HomeFooter({ sx, ...other }) {
             <Link href="https://f13.tech" color="primary" underline="always" target="_blank" rel="noopener">
               F13 Technologies
             </Link>
+            {' '} in 🇮🇳
           </Typography>
         </Box>
       </Container>
