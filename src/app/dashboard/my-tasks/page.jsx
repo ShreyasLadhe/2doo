@@ -587,10 +587,9 @@ export default function MyTasksPage() {
                                 {task.isOverdue && (
                                   <Chip
                                     label="Overdue"
-                                    size="small"
                                     color="error"
                                     variant="soft"
-                                    sx={{ height: 20, fontSize: '0.75rem' }}
+                                    sx={{ height: 30, fontSize: '1rem', mr: '1rem' }}
                                   />
                                 )}
                               </Box>
@@ -692,7 +691,7 @@ export default function MyTasksPage() {
                                 }
                                 size="small"
                                 icon={<Iconify icon="solar:calendar-bold" />}
-                                variant="outlined"
+                                variant="soft"
                               />
                             </Stack>
                           )}
@@ -797,7 +796,6 @@ export default function MyTasksPage() {
                                       {task.isOverdue && (
                                         <Chip
                                           label="Overdue"
-                                          size="small"
                                           color="error"
                                           variant="soft"
                                           sx={{ height: 20, fontSize: '0.75rem' }}
@@ -902,7 +900,7 @@ export default function MyTasksPage() {
                                       }
                                       size="small"
                                       icon={<Iconify icon="solar:calendar-bold" />}
-                                      variant="outlined"
+                                      variant="soft"
                                     />
                                   </Stack>
                                 )}

@@ -427,7 +427,7 @@ export function OverviewAppView() {
                   component={m.span}
                   animate={{ backgroundPosition: '200% center' }}
                   transition={{
-                    duration: 10, // Reduced duration for potentially faster animation on dashboard
+                    duration: 10,
                     ease: 'linear',
                     repeat: Infinity,
                     repeatType: 'reverse',
@@ -435,7 +435,7 @@ export function OverviewAppView() {
                   sx={[
                     (theme) => ({
                       ...theme.mixins.textGradient(
-                        `300deg, ${theme.vars.palette.primary.main} 0%, ${theme.vars.palette.warning.main} 25%, ${theme.vars.palette.primary.main} 50%, ${theme.vars.palette.warning.main} 75%, ${theme.vars.palette.primary.main} 100%`
+                        `300deg, ${theme.vars.palette.primary.main} 0%, ${theme.vars.palette.secondary.main} 25%, ${theme.vars.palette.primary.main} 50%, ${theme.vars.palette.secondary.main} 75%, ${theme.vars.palette.primary.main} 100%`
                       ),
                       backgroundSize: '400%',
                     }),
@@ -681,7 +681,6 @@ export function OverviewAppView() {
                                     {task.isOverdue && (
                                       <Chip
                                         label="Overdue"
-                                        size="small"
                                         color="error"
                                         variant="soft"
                                         sx={{ height: 20, fontSize: '0.75rem' }}
@@ -784,7 +783,7 @@ export function OverviewAppView() {
                                     }
                                     size="small"
                                     icon={<Iconify icon="solar:calendar-bold" />}
-                                    variant="outlined"
+                                    variant="soft"
                                   />
                                 </Stack>
                               )}
@@ -887,10 +886,9 @@ export function OverviewAppView() {
                                           {task.isOverdue && (
                                             <Chip
                                               label="Overdue"
-                                              size="small"
                                               color="error"
                                               variant="soft"
-                                              sx={{ height: 20, fontSize: '0.75rem' }}
+                                              sx={{ height: 30, fontSize: '1rem', mr: '1rem' }}
                                             />
                                           )}
                                         </Box>
@@ -990,7 +988,7 @@ export function OverviewAppView() {
                                           }
                                           size="small"
                                           icon={<Iconify icon="solar:calendar-bold" />}
-                                          variant="outlined"
+                                          variant="soft"
                                         />
                                       </Stack>
                                     )}
