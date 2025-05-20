@@ -51,7 +51,6 @@ export function AppTaskForm({ open, onClose, onSubmit, editTask = null }) {
   const [description, setDescription] = useState('');
   const [availableTags, setAvailableTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
-  const [repeatDate, setRepeatDate] = useState(null);
 
   // Fetch tags for the user
   useEffect(() => {
@@ -239,49 +238,6 @@ export function AppTaskForm({ open, onClose, onSubmit, editTask = null }) {
         await supabase.from('task_tags').insert([{ task_id, tag_id }]);
       }
       onSubmit({ ...insertedTask, subtasks: subtasksArr, tags: selectedTags });
-
-      // Handle repeat task creation
-      if (repeatDate) {
-        const repeatedTaskData = {
-          ...taskData,
-          due_date: formatDateTime(repeatDate), // Set the new due date
-          status: 'todo', // Reset status to todo
-          completed_at: null, // Reset completed_at
-        };
-
-        const repeatedTaskId = await getNextTaskId(); // Generate a new task_id
-
-        const { data: insertedRepeatedTask, error: repeatedTaskError } = await supabase
-          .from('tasks')
-          .insert([{ ...repeatedTaskData, task_id: repeatedTaskId }])
-          .select()
-          .single();
-
-        if (repeatedTaskError) {
-          console.error('Failed to add repeated task:', repeatedTaskError.message);
-          // Optionally alert the user, but don't stop the primary task submission
-        } else if (hasSubtasks && subtasksArr.length > 0) {
-          // Copy subtasks for the repeated task
-          const originalSubtasks = subtasks.filter(Boolean);
-          const repeatedSubtasksArr = originalSubtasks.map((title, idx) => ({
-            subtask_id: `SUB_TASK${repeatedTaskId}_${String(idx + 1).padStart(3, '0')}`, // New subtask_id
-            task_id: repeatedTaskId, // Link to the new repeated task
-            title: title, // Copy title
-            completed: false, // Reset completed status
-          }));
-
-          const { error: repeatedSubtaskError } = await supabase
-            .from('subtasks')
-            .insert(repeatedSubtasksArr);
-          if (repeatedSubtaskError) {
-            console.error('Failed to add subtasks for repeated task:', repeatedSubtaskError.message);
-          }
-        }
-        // Copy tags for the repeated task
-        for (const tag_id of tagIds) {
-          await supabase.from('task_tags').insert([{ task_id: repeatedTaskId, tag_id }]);
-        }
-      }
     }
     onClose();
   };
@@ -412,24 +368,6 @@ export function AppTaskForm({ open, onClose, onSubmit, editTask = null }) {
                   </Button>
                 </Stack>
               </Card>
-            )}
-
-            {/* Optional Repeat Task Date Picker - only visible for new tasks */}
-            {!editTask && (
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <DateTimePicker
-                  label="Repeat Task On"
-                  value={repeatDate}
-                  onChange={setRepeatDate}
-                  format="dd-MM-yyyy HH:mm"
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      name: 'repeatDate',
-                    },
-                  }}
-                />
-              </LocalizationProvider>
             )}
 
             <Autocomplete

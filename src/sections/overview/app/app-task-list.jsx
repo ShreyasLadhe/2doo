@@ -98,11 +98,12 @@ export function AppTaskList({
   subheader = 'Your current tasks',
   tableData = [],
   headCells = [
-    { id: 'title', label: 'Task', minWidth: 300 },
+    { id: 'title', label: 'Task', minWidth: 500 },
     { id: 'description', label: 'Description', minWidth: 260 },
+    { id: 'subtasks', label: 'Subtasks', minWidth: 120 },
     { id: 'dueDate', label: 'Due Date', minWidth: 120 },
-    { id: 'priority', label: 'Priority', minWidth: 100 },
-    { id: 'actions', label: 'Actions', minWidth: 150 },
+    { id: 'priority', label: 'Priority' },
+    { id: 'actions', label: 'Actions' },
   ],
   sx,
   hideViewAll = false,
@@ -121,6 +122,7 @@ export function AppTaskList({
   ...other
 }) {
   const [viewTask, setViewTask] = useState(null);
+  const [expandedSubtasks, setExpandedSubtasks] = useState({});
 
   // Handler to fetch latest subtasks before opening dialog
   const handleViewTask = async (row) => {
@@ -129,6 +131,24 @@ export function AppTaskList({
       .select('*')
       .eq('task_id', row.task_id);
     setViewTask({ ...row, subtasks: subtasks || [] });
+  };
+
+  const toggleSubtasks = (taskId) => {
+    setExpandedSubtasks(prev => ({
+      ...prev,
+      [taskId]: !prev[taskId]
+    }));
+  };
+
+  const handleSubtaskToggle = async (subtask) => {
+    await supabase
+      .from('subtasks')
+      .update({ completed: !subtask.completed })
+      .eq('id', subtask.id);
+    // Refresh the task view
+    if (viewTask) {
+      handleViewTask(viewTask);
+    }
   };
 
   const renderActions = (task) => (
@@ -219,6 +239,9 @@ export function AppTaskList({
                   onMarkCompleteTask={onMarkCompleteTask}
                   dense={dense}
                   animatingTaskId={animatingTaskId}
+                  expandedSubtasks={expandedSubtasks}
+                  onToggleSubtasks={toggleSubtasks}
+                  onSubtaskToggle={handleSubtaskToggle}
                 />
               ))}
             </TableBody>
@@ -479,7 +502,7 @@ function TaskViewDialog({ task, onClose }) {
 
 // ----------------------------------------------------------------------
 
-function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, dense, animatingTaskId }) {
+function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, dense, animatingTaskId, expandedSubtasks, onToggleSubtasks, onSubtaskToggle }) {
   const menuActions = usePopover();
 
   const handleEdit = () => {
@@ -527,6 +550,11 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
 
   // In the due date/completion date cell, use the correct formatting function.
   const { date: dueDate, time: dueTime } = splitDateTime(row.due_date);
+  const hasSubtasks = row.subtasks && row.subtasks.length > 0;
+  const completedSubtasks = hasSubtasks ? row.subtasks.filter(sub => sub.completed).length : 0;
+  const totalSubtasks = hasSubtasks ? row.subtasks.length : 0;
+  const progress = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
+
   return (
     <>
       <TableRow
@@ -547,7 +575,7 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
           ...(row.isOverdue
             ? { color: (theme) => theme.palette.error.main }
             : row.status === 'completed'
-              ? { textDecoration: 'line-through', color: 'success.main' }
+              ? { color: 'success.main' }
               : {}),
           display: 'flex',
           alignItems: 'center',
@@ -584,16 +612,24 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
                 >
                   {row.title}
                 </Typography>
-                {row.isOverdue && (
-                  <Chip
-                    label='Overdue'
-                    size='small'
-                    color='error'
-                    variant='soft'
-                    sx={{ height: 20, fontSize: '0.75rem' }}
-                  />
-                )}
               </Box>
+              {row.isOverdue && (
+                <Chip
+                  label='Overdue'
+                  size='small'
+                  color='error'
+                  variant='filled'
+                  sx={{
+                    height: 20,
+                    fontSize: '0.75rem',
+                    color: 'white',
+                    bgcolor: (theme) => theme.palette.error.dark,
+                    mt: 0.5,
+                    mb: 0.5,
+                    width: 'fit-content'
+                  }}
+                />
+              )}
               {row.tags && row.tags.length > 0 && (
                 <Stack direction='row' spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
                   {row.tags.map((tag) => (
@@ -617,11 +653,83 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
             {row.description}
           </Typography>
         </TableCell>
-        <TableCell sx={row.isOverdue ? { color: (theme) => theme.palette.error.main } : row.status === 'completed' ? { textDecoration: 'line-through', color: 'success.main' } : {}}>
+        <TableCell>
+          {hasSubtasks ? (
+            <Box>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <IconButton
+                  size="small"
+                  onClick={() => onToggleSubtasks(row.id)}
+                  sx={{ p: 0.5 }}
+                >
+                  <Iconify
+                    icon={expandedSubtasks[row.id] ? 'eva:arrow-ios-upward-fill' : 'eva:arrow-ios-downward-fill'}
+                    width={20}
+                  />
+                </IconButton>
+                <Box sx={{ flex: 1 }}>
+                  <LinearProgress
+                    variant="determinate"
+                    value={progress}
+                    sx={{
+                      height: 6,
+                      borderRadius: 1,
+                      backgroundColor: (theme) => theme.palette.grey[200],
+                      '& .MuiLinearProgress-bar': {
+                        borderRadius: 1,
+                        backgroundColor: (theme) =>
+                          progress === 100
+                            ? theme.palette.success.main
+                            : theme.palette.primary.main,
+                      },
+                    }}
+                  />
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                    {completedSubtasks}/{totalSubtasks}
+                  </Typography>
+                </Box>
+              </Stack>
+              {expandedSubtasks[row.id] && (
+                <Box sx={{ mt: 1, pl: 4 }}>
+                  <List dense disablePadding>
+                    {row.subtasks.map((subtask) => (
+                      <ListItem
+                        key={subtask.id}
+                        disableGutters
+                        sx={{ py: 0.5 }}
+                      >
+                        <Checkbox
+                          checked={subtask.completed}
+                          onChange={() => onSubtaskToggle(subtask)}
+                          size="small"
+                          sx={{ mr: 1 }}
+                        />
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            textDecoration: subtask.completed ? 'line-through' : 'none',
+                            color: subtask.completed ? 'success.main' : 'text.primary',
+                          }}
+                        >
+                          {subtask.title}
+                        </Typography>
+                      </ListItem>
+                    ))}
+                  </List>
+                </Box>
+              )}
+            </Box>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              No subtasks
+            </Typography>
+          )}
+        </TableCell>
+        <TableCell sx={row.isOverdue ? { color: (theme) => theme.palette.error.main } : row.status === 'completed' ? { color: 'success.main' } : {}}>
           {row.status === 'completed' ? (
             <>
               {/* Always show Due Date/Time */}
-              {(() => { const { date, time } = splitDateTime(row.due_date); return <span>{date}{" "}<span style={{ color: '#aaa', fontSize: '0.9em' }}>{time}</span></span>; })()}
+              {(() => { const { date, time } = splitDateTime(row.due_date); return <span style={{ textDecoration: 'line-through' }}>{date}{" "}<span style={{ color: '#aaa', fontSize: '0.9em' }}>{time}</span></span>; })()}
               {/* Show Completed Date/Time if available */}
               {row.completed_at && (
                 <span style={{ display: 'block', marginTop: '8px' }}>{(() => { const { date, time } = splitAndFormatCompletedAt(row.completed_at); return <span>Completed: {date}{" "}<span style={{ color: '#aaa', fontSize: '0.9em' }}>{time}</span></span>; })()}</span>
@@ -672,4 +780,7 @@ RowItem.propTypes = {
   onMarkCompleteTask: PropTypes.func,
   dense: PropTypes.bool,
   animatingTaskId: PropTypes.string,
+  expandedSubtasks: PropTypes.object,
+  onToggleSubtasks: PropTypes.func,
+  onSubtaskToggle: PropTypes.func,
 }; 
