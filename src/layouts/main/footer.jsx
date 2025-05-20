@@ -167,11 +167,22 @@ export function HomeFooter({ sx, ...other }) {
     >
       <Container>
         <Logo />
-        <Box sx={{ mt: 1, typography: 'caption' }}>
-          © All rights reserved.
-          <br /> made by
-          <Link href="https://f13.tech"> F13 Technologies</Link>
-          {" "}in 🇮🇳
+        <Box sx={{ mt: 1, typography: 'caption', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 2, mb: 0.5 }}>
+            <Link href="#" color="inherit" underline="hover">
+              Privacy Policy
+            </Link>
+            <span>|</span>
+            <Link href="#" color="inherit" underline="hover">
+              Terms and Conditions
+            </Link>
+          </Box>
+          <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+            Made by{' '}
+            <Link href="https://f13.tech" color="primary" underline="always" target="_blank" rel="noopener">
+              F13 Technologies
+            </Link>
+          </Typography>
         </Box>
       </Container>
     </FooterRoot>
