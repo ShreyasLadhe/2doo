@@ -381,13 +381,22 @@ export function OverviewAppView() {
   } else if (tab === 'month') {
     filteredTasks = [
       ...filteredTasks.filter(task => task.isOverdue && task.status !== 'completed'), // Overdue and not completed
-      ...filteredTasks.filter(
-        task =>
-          task.due_date &&
-          dayjs(task.due_date).isBetween(monthStart, monthEnd, 'minute', '[]') && // Within this month's date range inclusive
-          (task.status !== 'completed' || (task.status === 'completed' && task.completed_at && dayjs.utc(task.completed_at).tz(dayjs.tz.guess()).isBetween(monthStart, monthEnd, 'minute', '[]')))
+      ...filteredTasks.filter(task =>
+        task.due_date &&
+        dayjs(task.due_date).isBetween(monthStart, monthEnd, 'minute', '[]') && // Within this month's date range inclusive
+        (task.status !== 'completed' || (task.status === 'completed' && task.completed_at && dayjs.utc(task.completed_at).tz(dayjs.tz.guess()).isBetween(monthStart, monthEnd, 'minute', '[]')))
       ),
     ];
+
+    // Remove duplicates by task ID
+    const uniqueTaskIds = new Set();
+    filteredTasks = filteredTasks.filter(task => {
+      if (uniqueTaskIds.has(task.id)) {
+        return false;
+      }
+      uniqueTaskIds.add(task.id);
+      return true;
+    });
   } else if (tab === 'completed') {
     filteredTasks = filteredTasks.filter(task => task.status === 'completed');
   }
@@ -682,8 +691,13 @@ export function OverviewAppView() {
                                       <Chip
                                         label="Overdue"
                                         color="error"
-                                        variant="soft"
-                                        sx={{ height: 20, fontSize: '0.75rem' }}
+                                        variant="filled"
+                                        sx={{
+                                          height: 20,
+                                          fontSize: '0.75rem',
+                                          color: 'white',
+                                          bgcolor: (theme) => theme.palette.error.dark,
+                                        }}
                                       />
                                     )}
                                   </Box>
@@ -733,7 +747,7 @@ export function OverviewAppView() {
                                   <Typography variant="subtitle2" sx={{ mb: 1 }}>Subtasks</Typography>
                                   <Stack spacing={1}>
                                     {task.subtasks.map((sub) => (
-                                      <Box key={sub.id} sx={{ display: 'flex', alignItems: 'center', flexWrap: 'nowrap', p: 1, borderRadius: 1, bgcolor: sub.completed ? 'success.lighter' : 'background.paper', color: sub.completed ? 'success.dark' : 'text.primary', border: '1px solid', borderColor: sub.completed ? 'success.main' : 'grey.200' }}>
+                                      <Box key={sub.id} sx={{ display: 'flex', alignItems: 'center', flexWrap: 'nowrap', p: 1, borderRadius: 1, bgcolor: 'background.paper', color: sub.completed ? 'success.dark' : 'text.primary', border: '1px solid', borderColor: 'grey.200' }}>
                                         <Checkbox
                                           checked={sub.completed}
                                           onChange={async () => {
@@ -777,8 +791,8 @@ export function OverviewAppView() {
                                   <Chip
                                     label={
                                       <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 0 }}>
-                                        <span style={{ fontWeight: 500 }}>Due: {date}</span>
-                                        <span style={{ color: '#aaa', fontSize: '0.95em', marginLeft: 8 }}>{time}</span>
+                                        <span style={{ fontWeight: 500, textDecoration: 'line-through' }}>Due: {date}</span>
+                                        <span style={{ color: '#aaa', fontSize: '0.95em', marginLeft: 8, textDecoration: 'line-through' }}>{time}</span>
                                       </Box>
                                     }
                                     size="small"
@@ -887,8 +901,14 @@ export function OverviewAppView() {
                                             <Chip
                                               label="Overdue"
                                               color="error"
-                                              variant="soft"
-                                              sx={{ height: 30, fontSize: '1rem', mr: '1rem' }}
+                                              variant="filled"
+                                              sx={{
+                                                height: 30,
+                                                fontSize: '1rem',
+                                                mr: '1rem',
+                                                color: 'white',
+                                                bgcolor: (theme) => theme.palette.error.dark,
+                                              }}
                                             />
                                           )}
                                         </Box>
@@ -938,7 +958,7 @@ export function OverviewAppView() {
                                         <Typography variant="subtitle2" sx={{ mb: 1 }}>Subtasks</Typography>
                                         <Stack spacing={1}>
                                           {task.subtasks.map((sub) => (
-                                            <Box key={sub.id} sx={{ display: 'flex', alignItems: 'center', flexWrap: 'nowrap', p: 1, borderRadius: 1, bgcolor: sub.completed ? 'success.lighter' : 'background.paper', color: sub.completed ? 'success.dark' : 'text.primary', border: '1px solid', borderColor: sub.completed ? 'success.main' : 'grey.200' }}>
+                                            <Box key={sub.id} sx={{ display: 'flex', alignItems: 'center', flexWrap: 'nowrap', p: 1, borderRadius: 1, bgcolor: 'background.paper', color: sub.completed ? 'success.dark' : 'text.primary', border: '1px solid', borderColor: 'grey.200' }}>
                                               <Checkbox
                                                 checked={sub.completed}
                                                 onChange={async () => {
@@ -982,8 +1002,8 @@ export function OverviewAppView() {
                                         <Chip
                                           label={
                                             <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 0 }}>
-                                              <span style={{ fontWeight: 500 }}>Due: {date}</span>
-                                              <span style={{ color: '#aaa', fontSize: '0.95em', marginLeft: 8 }}>{time}</span>
+                                              <span style={{ fontWeight: 500, textDecoration: 'line-through' }}>Due: {date}</span>
+                                              <span style={{ color: '#aaa', fontSize: '0.95em', marginLeft: 8, textDecoration: 'line-through' }}>{time}</span>
                                             </Box>
                                           }
                                           size="small"
@@ -1048,9 +1068,10 @@ export function OverviewAppView() {
               subheader="Your current tasks"
               tableData={paginatedListTasks}
               headCells={[
-                { id: 'title', label: 'Task' },
-                { id: 'description', label: 'Description' },
-                { id: 'dueDate', label: 'Due Date' },
+                { id: 'title', label: 'Task', minWidth: 500 },
+                { id: 'description', label: 'Description', minWidth: 260 },
+                { id: 'subtasks', label: 'Subtasks', minWidth: 120 },
+                { id: 'dueDate', label: 'Due Date', minWidth: 120 },
                 { id: 'priority', label: 'Priority' },
                 { id: 'actions', label: 'Actions' },
               ]}
