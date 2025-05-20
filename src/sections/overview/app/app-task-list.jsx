@@ -612,21 +612,24 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
                 >
                   {row.title}
                 </Typography>
-                {row.isOverdue && (
-                  <Chip
-                    label='Overdue'
-                    size='small'
-                    color='error'
-                    variant='filled'
-                    sx={{
-                      height: 20,
-                      fontSize: '0.75rem',
-                      color: 'white',
-                      bgcolor: (theme) => theme.palette.error.dark,
-                    }}
-                  />
-                )}
               </Box>
+              {row.isOverdue && (
+                <Chip
+                  label='Overdue'
+                  size='small'
+                  color='error'
+                  variant='filled'
+                  sx={{
+                    height: 20,
+                    fontSize: '0.75rem',
+                    color: 'white',
+                    bgcolor: (theme) => theme.palette.error.dark,
+                    mt: 0.5,
+                    mb: 0.5,
+                    width: 'fit-content'
+                  }}
+                />
+              )}
               {row.tags && row.tags.length > 0 && (
                 <Stack direction='row' spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
                   {row.tags.map((tag) => (
