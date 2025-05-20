@@ -170,7 +170,8 @@ export function HomeFooter({ sx, ...other }) {
         <Box sx={{ mt: 1, typography: 'caption' }}>
           © All rights reserved.
           <br /> made by
-          <Link href="https://f13.tech"> F13 Technologies IN</Link>
+          <Link href="https://f13.tech"> F13 Technologies</Link>
+          {" "}in 🇮🇳
         </Box>
       </Container>
     </FooterRoot>

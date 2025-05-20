@@ -98,12 +98,12 @@ export function AppTaskList({
   subheader = 'Your current tasks',
   tableData = [],
   headCells = [
-    { id: 'title', label: 'Task', minWidth: 500 },
-    { id: 'description', label: 'Description', minWidth: 260 },
-    { id: 'subtasks', label: 'Subtasks', minWidth: 120 },
-    { id: 'dueDate', label: 'Due Date', minWidth: 120 },
-    { id: 'priority', label: 'Priority' },
-    { id: 'actions', label: 'Actions' },
+    { id: 'title', label: 'Task', width: '25%' },
+    { id: 'description', label: 'Description', width: '40%' },
+    { id: 'subtasks', label: 'Subtasks', width: 120 },
+    { id: 'dueDate', label: 'Due Date', width: 120 },
+    { id: 'priority', label: 'Priority', width: 100 },
+    { id: 'actions', label: 'Actions', width: 150 },
   ],
   sx,
   hideViewAll = false,
@@ -565,6 +565,9 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
               '& td, & th': { color: (theme) => theme.palette.error.main },
             }
             : {}),
+          '& td, & th': {
+            borderBottom: 'none',
+          },
         }}
         hover
         selected={false}
@@ -583,8 +586,6 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
           py: 1.5,
           pl: 2,
           pr: 3,
-          minWidth: 300,
-          maxWidth: 300,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
         }}>
@@ -641,8 +642,6 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
           </Box>
         </TableCell>
         <TableCell sx={{
-          minWidth: 260,
-          maxWidth: 260,
           color: row.isOverdue ? (theme) => theme.palette.error.main : row.status === 'completed' ? 'success.main' : undefined,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
@@ -740,7 +739,9 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
             (() => { const { date, time } = splitDateTime(row.due_date); return <span>{date}{" "}<span style={{ color: '#aaa', fontSize: '0.9em' }}>{time}</span></span>; })()
           )}
         </TableCell>
-        <TableCell>
+        <TableCell sx={{
+          minWidth: 100,
+        }}>
           <Label
             variant='soft'
             color={
