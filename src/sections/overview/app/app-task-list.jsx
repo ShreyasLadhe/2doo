@@ -116,26 +116,10 @@ export function AppTaskList({
   availableTags = [],
   selectedTags = [],
   onTagFilterChange = () => { },
+  animatingTaskId,
   ...other
 }) {
   const [viewTask, setViewTask] = useState(null);
-  const [expanded, setExpanded] = useState({});
-
-  // Set expanded state for mobile devices
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 600) {
-        // Set all cards to expanded on mobile
-        const newExpanded = {};
-        tableData.forEach(task => { newExpanded[task.id] = true; });
-        setExpanded(newExpanded);
-      }
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [tableData]);
 
   // Handler to fetch latest subtasks before opening dialog
   const handleViewTask = async (row) => {
@@ -166,10 +150,7 @@ export function AppTaskList({
   );
 
   return (
-    <Card sx={{
-      ...sx,
-      display: { xs: 'none', sm: 'block' } // Hide on mobile screens
-    }} {...other}>
+    <Card sx={sx} {...other}>
       <CardHeader
         title={title}
         subheader={subheader}
@@ -203,6 +184,7 @@ export function AppTaskList({
                 onDeleteTask={onDeleteTask}
                 onMarkCompleteTask={onMarkCompleteTask}
                 dense={dense}
+                animatingTaskId={animatingTaskId}
               />
             ))}
           </TableBody>
@@ -259,6 +241,7 @@ AppTaskList.propTypes = {
   availableTags: PropTypes.array,
   selectedTags: PropTypes.array,
   onTagFilterChange: PropTypes.func,
+  animatingTaskId: PropTypes.string,
 };
 
 // ----------------------------------------------------------------------
@@ -461,7 +444,7 @@ function TaskViewDialog({ task, onClose }) {
 
 // ----------------------------------------------------------------------
 
-function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, dense }) {
+function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, dense, animatingTaskId }) {
   const menuActions = usePopover();
 
   const handleEdit = () => {
@@ -545,14 +528,25 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
           <Box sx={{ display: 'flex', alignItems: 'center', minHeight: 40 }}>
             <Checkbox
               checked={row.status === 'completed'}
-              onChange={() => onMarkCompleteTask && onMarkCompleteTask(row)}
+              onChange={() => onMarkCompleteTask(row)}
               color='success'
               sx={{ mr: 1, p: 0.5 }}
               disabled={row.status === 'completed'}
             />
             <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', ml: 1 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant='body1' fontWeight={600} sx={{ lineHeight: 1.2 }}>
+                <Typography
+                  variant='body1'
+                  fontWeight={600}
+                  sx={{
+                    lineHeight: 1.2,
+                    ...(row.status === 'completed' && {
+                      textDecoration: 'line-through',
+                      color: 'success.main',
+                    }),
+                  }}
+                  className={`strikethrough-animation ${animatingTaskId === row.id ? 'animate' : ''}`}
+                >
                   {row.title}
                 </Typography>
                 {row.isOverdue && (
@@ -634,4 +628,5 @@ RowItem.propTypes = {
   onDeleteTask: PropTypes.func,
   onMarkCompleteTask: PropTypes.func,
   dense: PropTypes.bool,
+  animatingTaskId: PropTypes.string,
 }; 

@@ -37,6 +37,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import { ConfettiAnimation } from 'src/components/confetti-animation';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -130,17 +131,17 @@ export default function MyTasksPage() {
   const [tagAnchorEl, setTagAnchorEl] = useState(null);
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [tagExpanded, setTagExpanded] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [animatingTaskId, setAnimatingTaskId] = useState(null);
 
   // Determine initial view based on screen width
   useEffect(() => {
     const handleResize = () => {
-      // Force card view if screen width is less than 600px
+      // Assuming 'sm' breakpoint is 600px. Use card view if screen width is less than 600px
       if (window.innerWidth < 600) {
         setCardView(true);
-        // Remove automatic expansion on mobile
-        // const newExpanded = {};
-        // paginatedTasks.forEach(task => { newExpanded[task.id] = true; });
-        // setExpanded(newExpanded);
+      } else {
+        setCardView(false);
       }
     };
 
@@ -334,14 +335,29 @@ export default function MyTasksPage() {
 
   // Mark task as complete
   const handleMarkCompleteTask = async (task) => {
-    setLoading(true);
-    await supabase.from('tasks').update({ status: 'completed', completed_at: getCurrentTimeGMT530() }).eq('id', task.id);
-    await fetchTasks();
-    setLoading(false);
+    setAnimatingTaskId(task.id);
+    setShowConfetti(true);
+
+    // Wait for strikethrough animation to complete before updating the database
+    setTimeout(async () => {
+      await supabase.from('tasks').update({
+        status: 'completed',
+        completed_at: getCurrentTimeGMT530()
+      }).eq('id', task.id);
+
+      await fetchTasks();
+      setAnimatingTaskId(null);
+
+      // Hide confetti after 5 seconds (increased from 3)
+      setTimeout(() => {
+        setShowConfetti(false);
+      }, 5000);
+    }, 1000); // Increased from 500ms to 1000ms to ensure strikethrough completes
   };
 
   return (
     <Container maxWidth="xl" sx={{ py: 5 }}>
+      {showConfetti && <ConfettiAnimation />}
       <Typography variant="h3" fontWeight={700} gutterBottom>
         My Tasks
       </Typography>
@@ -417,15 +433,12 @@ export default function MyTasksPage() {
               </IconButton>
             </Tooltip>
           )}
-          {/* Card/List View Toggle - Hidden on mobile */}
+          {/* Card/List View Toggle */}
           <IconButton
             color={cardView ? 'primary' : 'default'}
             onClick={handleViewSwitch}
             title={cardView ? 'Switch to List View' : 'Switch to Grid View'}
-            sx={{
-              display: { xs: 'none', sm: 'flex' },
-              alignItems: 'center'
-            }}
+            sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center' }}
           >
             <Iconify icon={cardView ? 'solar:list-bold' : 'solar:card-bold'} width={24} />
             <Typography variant="body2" sx={{ ml: 1, display: { xs: 'none', sm: 'block' } }}>
@@ -446,7 +459,7 @@ export default function MyTasksPage() {
           >
             New Task
           </Button>
-          {/* Expand/Compress All button for Grid View - Hidden on mobile */}
+          {/* Expand/Compress All button for Grid View */}
           {cardView && (
             <Button
               variant="outlined"
@@ -483,8 +496,8 @@ export default function MyTasksPage() {
       </Box>
       {cardView ? (
         <>
-          {Object.values(expanded).some(Boolean) ? (
-            <Masonry columns={3} spacing={4}>
+          {Object.values(expanded).some(Boolean) || window.innerWidth < 600 ? (
+            <Masonry columns={{ xs: 1, sm: 2, md: 3 }} spacing={4}>
               {paginatedTasks.map((task) => {
                 const { date, time } = splitDateTime(task.due_date);
                 const completionDateTime = task.status === 'completed' && task.completed_at ? splitAndFormatCompletedAt(task.completed_at) : null;
@@ -493,7 +506,7 @@ export default function MyTasksPage() {
                     borderRadius: 3,
                     boxShadow: 3,
                     p: 2,
-                    width: 420,
+                    width: { xs: '100%', sm: 420 },
                     minHeight: 180,
                     display: 'flex',
                     flexDirection: 'column',
@@ -534,6 +547,7 @@ export default function MyTasksPage() {
                               variant="h6"
                               fontWeight={700}
                               gutterBottom
+                              className={`strikethrough-animation ${animatingTaskId === task.id ? 'animate' : ''}`}
                               sx={{
                                 ...(task.status === 'completed' && {
                                   textDecoration: 'line-through',
@@ -597,8 +611,7 @@ export default function MyTasksPage() {
                           </Stack>
                         </Box>
                       )}
-                      {/* Always show subtasks on mobile (cardView is true) or if expanded on desktop */}
-                      {(cardView || expanded[task.id]) && task.subtasks && task.subtasks.length > 0 && (
+                      {(expanded[task.id] || window.innerWidth < 600) && task.subtasks && task.subtasks.length > 0 && (
                         <Box sx={{ mb: 1, mt: 1 }}>
                           <Typography variant="subtitle2" sx={{ mb: 1 }}>Subtasks</Typography>
                           <Stack spacing={1}>
@@ -621,21 +634,6 @@ export default function MyTasksPage() {
                                 >
                                   {sub.title}
                                 </Typography>
-                                <IconButton size="small" onClick={() => {
-                                  setEditingSubtask({ ...sub, task });
-                                  setEditSubtaskDialogOpen(true);
-                                }} sx={{ color: 'primary.main' }}>
-                                  <Iconify icon="solar:pen-bold" />
-                                </IconButton>
-                                <IconButton size="small" onClick={async () => {
-                                  await supabase
-                                    .from('subtasks')
-                                    .delete()
-                                    .eq('id', sub.id);
-                                  fetchTasks();
-                                }} sx={{ color: 'error.main' }}>
-                                  <Iconify icon="solar:trash-bin-trash-bold" />
-                                </IconButton>
                               </Box>
                             ))}
                           </Stack>
@@ -757,6 +755,7 @@ export default function MyTasksPage() {
                                     variant="h6"
                                     fontWeight={700}
                                     gutterBottom
+                                    className={`strikethrough-animation ${animatingTaskId === task.id ? 'animate' : ''}`}
                                     sx={{
                                       ...(task.status === 'completed' && {
                                         textDecoration: 'line-through',
@@ -820,8 +819,7 @@ export default function MyTasksPage() {
                                 </Stack>
                               </Box>
                             )}
-                            {/* Always show subtasks on mobile (cardView is true) or if expanded on desktop */}
-                            {(cardView || expanded[task.id]) && task.subtasks && task.subtasks.length > 0 && (
+                            {(expanded[task.id] || window.innerWidth < 600) && task.subtasks && task.subtasks.length > 0 && (
                               <Box sx={{ mb: 1, mt: 1 }}>
                                 <Typography variant="subtitle2" sx={{ mb: 1 }}>Subtasks</Typography>
                                 <Stack spacing={1}>
@@ -844,21 +842,6 @@ export default function MyTasksPage() {
                                       >
                                         {sub.title}
                                       </Typography>
-                                      <IconButton size="small" onClick={() => {
-                                        setEditingSubtask({ ...sub, task });
-                                        setEditSubtaskDialogOpen(true);
-                                      }} sx={{ color: 'primary.main' }}>
-                                        <Iconify icon="solar:pen-bold" />
-                                      </IconButton>
-                                      <IconButton size="small" onClick={async () => {
-                                        await supabase
-                                          .from('subtasks')
-                                          .delete()
-                                          .eq('id', sub.id);
-                                        fetchTasks();
-                                      }} sx={{ color: 'error.main' }}>
-                                        <Iconify icon="solar:trash-bin-trash-bold" />
-                                      </IconButton>
                                     </Box>
                                   ))}
                                 </Stack>
@@ -965,6 +948,7 @@ export default function MyTasksPage() {
             onMarkCompleteTask={handleMarkCompleteTask}
             dense={dense}
             onToggleDense={() => setDense((d) => !d)}
+            animatingTaskId={animatingTaskId}
           />
           {totalListPages > 1 && (
             <Stack alignItems="center" sx={{ mt: 4 }}>

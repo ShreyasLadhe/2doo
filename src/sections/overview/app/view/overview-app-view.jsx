@@ -38,6 +38,7 @@ import { AppCurrentDownload } from '../app-current-download';
 import { AppTaskList } from '../app-task-list';
 import { AppTaskForm } from '../app-task-form';
 import { supabase } from 'src/lib/supabase';
+import { ConfettiAnimation } from 'src/components/confetti-animation';
 
 // ----------------------------------------------------------------------
 
@@ -137,13 +138,17 @@ export function OverviewAppView() {
   const [cardView, setCardView] = useState(false);
   const [expanded, setExpanded] = useState({});
   const [page, setPage] = useState(1);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [animatingTaskId, setAnimatingTaskId] = useState(null);
 
   // Determine initial view based on screen width
   useEffect(() => {
     const handleResize = () => {
-      // Force card view if screen width is less than 600px
+      // Assuming 'sm' breakpoint is 600px. Use card view if screen width is less than 600px
       if (window.innerWidth < 600) {
         setCardView(true);
+      } else {
+        setCardView(false);
       }
     };
 
@@ -289,8 +294,24 @@ export function OverviewAppView() {
 
   // Mark task as complete
   const handleMarkCompleteTask = async (task) => {
-    await supabase.from('tasks').update({ status: 'completed', completed_at: getCurrentTimeGMT530() }).eq('id', task.id);
-    fetchTasks();
+    setAnimatingTaskId(task.id);
+    setShowConfetti(true);
+
+    // Wait for strikethrough animation to complete before updating the database
+    setTimeout(async () => {
+      await supabase.from('tasks').update({
+        status: 'completed',
+        completed_at: getCurrentTimeGMT530()
+      }).eq('id', task.id);
+
+      await fetchTasks();
+      setAnimatingTaskId(null);
+
+      // Hide confetti after 5 seconds (increased from 3)
+      setTimeout(() => {
+        setShowConfetti(false);
+      }, 5000);
+    }, 1000); // Increased from 500ms to 1000ms to ensure strikethrough completes
   };
 
   const handleTabChange = (event, newValue) => {
@@ -398,6 +419,7 @@ export function OverviewAppView() {
 
   return (
     <DashboardContent maxWidth="xl">
+      {showConfetti && <ConfettiAnimation />}
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 12 }}>
           <AppWelcome
@@ -489,53 +511,18 @@ export function OverviewAppView() {
                 </IconButton>
               </Tooltip>
             )}
-            {/* Card/List View Toggle - Hidden on mobile */}
+            {/* Card/List View Toggle */}
             <IconButton
               color={cardView ? 'primary' : 'default'}
               onClick={() => setCardView((v) => !v)}
               title={cardView ? 'Switch to List View' : 'Switch to Grid View'}
-              sx={{
-                display: { xs: 'none', sm: 'flex' },
-                alignItems: 'center'
-              }}
+              sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center' }}
             >
               <Iconify icon={cardView ? 'solar:list-bold' : 'solar:card-bold'} width={24} />
               <Typography variant="body2" sx={{ ml: 1, display: { xs: 'none', sm: 'block' } }}>
                 {cardView ? 'List View' : 'Grid View'}
               </Typography>
             </IconButton>
-
-            {/* Expand/Compress All button for Grid View - Hidden on mobile */}
-            {cardView && (
-              <Button
-                variant="outlined"
-                startIcon={
-                  Object.values(expanded).filter(Boolean).length === paginatedTasks.length
-                    ? <Iconify icon="eva:arrow-ios-upward-fill" />
-                    : <Iconify icon="eva:arrow-ios-downward-fill" />
-                }
-                onClick={() => {
-                  const allExpanded = Object.values(expanded).filter(Boolean).length === paginatedTasks.length;
-                  if (allExpanded) {
-                    // Compress all
-                    const newExpanded = {};
-                    paginatedTasks.forEach(task => { newExpanded[task.id] = false; });
-                    setExpanded(newExpanded);
-                  } else {
-                    // Expand all
-                    const newExpanded = {};
-                    paginatedTasks.forEach(task => { newExpanded[task.id] = true; });
-                    setExpanded(newExpanded);
-                  }
-                }}
-                sx={{
-                  ml: 1,
-                  display: { xs: 'none', sm: 'flex' }
-                }}
-              >
-                {Object.values(expanded).filter(Boolean).length === paginatedTasks.length ? 'Compress All' : 'Expand All'}
-              </Button>
-            )}
 
             <Button
               variant="contained"
@@ -560,8 +547,8 @@ export function OverviewAppView() {
           </Tabs>
           {cardView ? (
             <>
-              {Object.values(expanded).some(Boolean) ? (
-                <Masonry columns={3} spacing={4}>
+              {Object.values(expanded).some(Boolean) || window.innerWidth < 600 ? (
+                <Masonry columns={{ xs: 1, sm: 2, md: 3 }} spacing={4}>
                   {paginatedTasks.map((task) => {
                     const { date, time } = splitDateTime(task.due_date);
                     const completionDateTime = task.status === 'completed' && task.completed_at ? splitAndFormatCompletedAt(task.completed_at) : null;
@@ -570,7 +557,7 @@ export function OverviewAppView() {
                         borderRadius: 3,
                         boxShadow: 3,
                         p: 2,
-                        width: 420,
+                        width: { xs: '100%', sm: 420 },
                         minHeight: 180,
                         display: 'flex',
                         flexDirection: 'column',
@@ -611,6 +598,7 @@ export function OverviewAppView() {
                                   variant="h6"
                                   fontWeight={700}
                                   gutterBottom
+                                  className={`strikethrough-animation ${animatingTaskId === task.id ? 'animate' : ''}`}
                                   sx={{
                                     ...(task.status === 'completed' && {
                                       textDecoration: 'line-through',
@@ -674,7 +662,7 @@ export function OverviewAppView() {
                               </Stack>
                             </Box>
                           )}
-                          {(cardView || expanded[task.id]) && task.subtasks && task.subtasks.length > 0 && (
+                          {(expanded[task.id] || window.innerWidth < 600) && task.subtasks && task.subtasks.length > 0 && (
                             <Box sx={{ mb: 1, mt: 1 }}>
                               <Typography variant="subtitle2" sx={{ mb: 1 }}>Subtasks</Typography>
                               <Stack spacing={1}>
@@ -816,6 +804,7 @@ export function OverviewAppView() {
                                         variant="h6"
                                         fontWeight={700}
                                         gutterBottom
+                                        className={`strikethrough-animation ${animatingTaskId === task.id ? 'animate' : ''}`}
                                         sx={{
                                           ...(task.status === 'completed' && {
                                             textDecoration: 'line-through',
@@ -879,7 +868,7 @@ export function OverviewAppView() {
                                     </Stack>
                                   </Box>
                                 )}
-                                {(cardView || expanded[task.id]) && task.subtasks && task.subtasks.length > 0 && (
+                                {(expanded[task.id] || window.innerWidth < 600) && task.subtasks && task.subtasks.length > 0 && (
                                   <Box sx={{ mb: 1, mt: 1 }}>
                                     <Typography variant="subtitle2" sx={{ mb: 1 }}>Subtasks</Typography>
                                     <Stack spacing={1}>
@@ -1009,6 +998,7 @@ export function OverviewAppView() {
               availableTags={availableTags}
               selectedTags={selectedTags}
               onTagFilterChange={setSelectedTags}
+              animatingTaskId={animatingTaskId}
             />
           )}
         </Grid>
