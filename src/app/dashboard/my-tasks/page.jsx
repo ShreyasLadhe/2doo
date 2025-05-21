@@ -165,12 +165,14 @@ export default function MyTasksPage() {
   }
   if (startDate) {
     filteredTasks = filteredTasks.filter(task =>
-      task.due_date && dayjs(task.due_date).isAfter(dayjs(startDate).startOf('day'), 'minute')
+      (task.status !== 'completed' && task.due_date && dayjs(task.due_date).isAfter(dayjs(startDate).startOf('day'), 'minute')) ||
+      (task.status === 'completed' && task.completed_at && dayjs.utc(task.completed_at).tz(dayjs.tz.guess()).isAfter(dayjs(startDate).startOf('day'), 'minute'))
     );
   }
   if (endDate) {
     filteredTasks = filteredTasks.filter(task =>
-      task.due_date && dayjs(task.due_date).isBefore(dayjs(endDate).endOf('day'), 'minute')
+      (task.status !== 'completed' && task.due_date && dayjs(task.due_date).isBefore(dayjs(endDate).endOf('day'), 'minute')) ||
+      (task.status === 'completed' && task.completed_at && dayjs.utc(task.completed_at).tz(dayjs.tz.guess()).isBefore(dayjs(endDate).endOf('day'), 'minute'))
     );
   }
   if (selectedTags.length > 0) {

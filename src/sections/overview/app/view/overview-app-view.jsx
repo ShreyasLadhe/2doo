@@ -355,42 +355,26 @@ export function OverviewAppView() {
   const monthEnd = dayjs().endOf('month');
 
   if (tab === 'today') {
-    filteredTasks = [
-      ...filteredTasks.filter(task => task.isOverdue && task.status !== 'completed'), // Overdue and not completed
-      ...filteredTasks.filter(task =>
-        task.due_date &&
-        dayjs(task.due_date).isBetween(todayStart, todayEnd, 'minute', '[]') && // Within today's date range inclusive
-        (task.status !== 'completed' || (task.status === 'completed' && task.completed_at && dayjs.utc(task.completed_at).tz(dayjs.tz.guess()).isBetween(todayStart, todayEnd, 'minute', '[]')))
-      ),
-    ];
+    filteredTasks = filteredTasks.filter(task =>
+      (task.status !== 'completed' && task.due_date && dayjs(task.due_date).isBetween(todayStart, todayEnd, 'minute', '[]')) ||
+      (task.status === 'completed' && task.completed_at && dayjs.utc(task.completed_at).tz(dayjs.tz.guess()).isBetween(todayStart, todayEnd, 'minute', '[]'))
+    );
   } else if (tab === 'tomorrow') {
-    filteredTasks = [
-      ...filteredTasks.filter(task => task.isOverdue && task.status !== 'completed'), // Overdue and not completed
-      ...filteredTasks.filter(task =>
-        task.due_date &&
-        dayjs(task.due_date).isBetween(tomorrowStart, tomorrowEnd, 'minute', '[]') && // Within tomorrow's date range inclusive
-        (task.status !== 'completed' || (task.status === 'completed' && task.completed_at && dayjs.utc(task.completed_at).tz(dayjs.tz.guess()).isBetween(tomorrowStart, tomorrowEnd, 'minute', '[]')))
-      ),
-    ];
+    filteredTasks = filteredTasks.filter(task =>
+      (task.status !== 'completed' && task.due_date && dayjs(task.due_date).isBetween(tomorrowStart, tomorrowEnd, 'minute', '[]')) ||
+      (task.status === 'completed' && task.completed_at && dayjs.utc(task.completed_at).tz(dayjs.tz.guess()).isBetween(tomorrowStart, tomorrowEnd, 'minute', '[]'))
+    );
   } else if (tab === 'week') {
-    filteredTasks = [
-      ...filteredTasks.filter(task => task.isOverdue && task.status !== 'completed'), // Overdue and not completed
-      ...filteredTasks.filter(
-        task =>
-          task.due_date &&
-          dayjs(task.due_date).isBetween(weekStart, weekEnd, 'minute', '[]') && // Within this week's date range inclusive
-          (task.status !== 'completed' || (task.status === 'completed' && task.completed_at && dayjs.utc(task.completed_at).tz(dayjs.tz.guess()).isBetween(weekStart, weekEnd, 'minute', '[]')))
-      ),
-    ];
+    filteredTasks = filteredTasks.filter(
+      task =>
+        (task.status !== 'completed' && task.due_date && dayjs(task.due_date).isBetween(weekStart, weekEnd, 'minute', '[]')) ||
+        (task.status === 'completed' && task.completed_at && dayjs.utc(task.completed_at).tz(dayjs.tz.guess()).isBetween(weekStart, weekEnd, 'minute', '[]'))
+    );
   } else if (tab === 'month') {
-    filteredTasks = [
-      ...filteredTasks.filter(task => task.isOverdue && task.status !== 'completed'), // Overdue and not completed
-      ...filteredTasks.filter(task =>
-        task.due_date &&
-        dayjs(task.due_date).isBetween(monthStart, monthEnd, 'minute', '[]') && // Within this month's date range inclusive
-        (task.status !== 'completed' || (task.status === 'completed' && task.completed_at && dayjs.utc(task.completed_at).tz(dayjs.tz.guess()).isBetween(monthStart, monthEnd, 'minute', '[]')))
-      ),
-    ];
+    filteredTasks = filteredTasks.filter(task =>
+      (task.status !== 'completed' && task.due_date && dayjs(task.due_date).isBetween(monthStart, monthEnd, 'minute', '[]')) ||
+      (task.status === 'completed' && task.completed_at && dayjs.utc(task.completed_at).tz(dayjs.tz.guess()).isBetween(monthStart, monthEnd, 'minute', '[]'))
+    );
 
     // Remove duplicates by task ID
     const uniqueTaskIds = new Set();
