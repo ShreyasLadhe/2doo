@@ -134,6 +134,12 @@ export default function MyTasksPage() {
   const [tagExpanded, setTagExpanded] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [animatingTaskId, setAnimatingTaskId] = useState(null);
+  const [editSubtask, setEditSubtask] = useState(null);
+  const [editSubtaskTitle, setEditSubtaskTitle] = useState('');
+  const [openEditSubtaskDialog, setOpenEditSubtaskDialog] = useState(false);
+  const [subtaskToDelete, setSubtaskToDelete] = useState(null);
+  const [openDeleteSubtaskDialog, setOpenDeleteSubtaskDialog] = useState(false);
+  const [currentTaskForSubtask, setCurrentTaskForSubtask] = useState(null);
 
   // Determine initial view based on screen width
   useEffect(() => {
@@ -166,13 +172,13 @@ export default function MyTasksPage() {
   if (startDate) {
     filteredTasks = filteredTasks.filter(task =>
       (task.status !== 'completed' && task.due_date && dayjs(task.due_date).isAfter(dayjs(startDate).startOf('day'), 'minute')) ||
-      (task.status === 'completed' && task.completed_at && dayjs.utc(task.completed_at).tz(dayjs.tz.guess()).isAfter(dayjs(startDate).startOf('day'), 'minute'))
+      (task.status === 'completed' && task.completed_at && dayjs.utc(task.completed_at).isAfter(dayjs(startDate).startOf('day'), 'minute'))
     );
   }
   if (endDate) {
     filteredTasks = filteredTasks.filter(task =>
       (task.status !== 'completed' && task.due_date && dayjs(task.due_date).isBefore(dayjs(endDate).endOf('day'), 'minute')) ||
-      (task.status === 'completed' && task.completed_at && dayjs.utc(task.completed_at).tz(dayjs.tz.guess()).isBefore(dayjs(endDate).endOf('day'), 'minute'))
+      (task.status === 'completed' && task.completed_at && dayjs.utc(task.completed_at).isBefore(dayjs(endDate).endOf('day'), 'minute'))
     );
   }
   if (selectedTags.length > 0) {
@@ -352,6 +358,11 @@ export default function MyTasksPage() {
         completed_at: newStatus === 'completed' ? getCurrentTimeGMT530() : null
       }).eq('id', task.id);
 
+      // If the task is marked as complete, mark all its subtasks as complete
+      if (newStatus === 'completed') {
+        await supabase.from('subtasks').update({ completed: true }).eq('task_id', task.task_id);
+      }
+
       await fetchTasks();
       setAnimatingTaskId(null);
 
@@ -360,6 +371,52 @@ export default function MyTasksPage() {
         setShowConfetti(false);
       }, 1000);
     }, 1000);
+  };
+
+  const handleEditSubtask = (subtask, taskId) => {
+    setEditSubtask(subtask);
+    setEditSubtaskTitle(subtask.title);
+    setCurrentTaskForSubtask(taskId);
+    setOpenEditSubtaskDialog(true);
+  };
+
+  const handleCloseEditSubtaskDialog = () => {
+    setOpenEditSubtaskDialog(false);
+    setEditSubtask(null);
+    setEditSubtaskTitle('');
+    setCurrentTaskForSubtask(null);
+  };
+
+  const handleSaveSubtask = async () => {
+    if (!editSubtask) return;
+    await supabase
+      .from('subtasks')
+      .update({ title: editSubtaskTitle })
+      .eq('id', editSubtask.id);
+    handleCloseEditSubtaskDialog();
+    fetchTasks(); // Refresh tasks after saving subtask
+  };
+
+  const handleDeleteSubtask = (subtask, taskId) => {
+    setSubtaskToDelete(subtask);
+    setCurrentTaskForSubtask(taskId);
+    setOpenDeleteSubtaskDialog(true);
+  };
+
+  const handleCloseDeleteSubtaskDialog = () => {
+    setOpenDeleteSubtaskDialog(false);
+    setSubtaskToDelete(null);
+    setCurrentTaskForSubtask(null);
+  };
+
+  const confirmDeleteSubtask = async () => {
+    if (!subtaskToDelete) return;
+    await supabase
+      .from('subtasks')
+      .delete()
+      .eq('id', subtaskToDelete.id);
+    handleCloseDeleteSubtaskDialog();
+    fetchTasks(); // Refresh tasks after deleting subtask
   };
 
   return (
@@ -680,6 +737,14 @@ export default function MyTasksPage() {
                                     >
                                       {sub.title}
                                     </Typography>
+                                    <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
+                                      <IconButton size="small" onClick={() => handleEditSubtask(sub, task.id)} sx={{ color: 'primary.main' }}>
+                                        <Iconify icon="solar:pen-bold" />
+                                      </IconButton>
+                                      <IconButton size="small" onClick={() => handleDeleteSubtask(sub, task.id)} sx={{ color: 'error.main' }}>
+                                        <Iconify icon="solar:trash-bin-trash-bold" />
+                                      </IconButton>
+                                    </Stack>
                                   </Box>
                                 ))}
                               </Stack>
@@ -905,6 +970,14 @@ export default function MyTasksPage() {
                                           >
                                             {sub.title}
                                           </Typography>
+                                          <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
+                                            <IconButton size="small" onClick={() => handleEditSubtask(sub, task.id)} sx={{ color: 'primary.main' }}>
+                                              <Iconify icon="solar:pen-bold" />
+                                            </IconButton>
+                                            <IconButton size="small" onClick={() => handleDeleteSubtask(sub, task.id)} sx={{ color: 'error.main' }}>
+                                              <Iconify icon="solar:trash-bin-trash-bold" />
+                                            </IconButton>
+                                          </Stack>
                                         </Box>
                                       ))}
                                     </Stack>
@@ -1054,6 +1127,31 @@ export default function MyTasksPage() {
         <DialogActions>
           <Button onClick={cancelDelete} color="inherit">Cancel</Button>
           <Button onClick={confirmDelete} color="error" variant="contained">Delete</Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={openEditSubtaskDialog} onClose={handleCloseEditSubtaskDialog}>
+        <DialogContent>
+          <Typography variant="h6">Edit Subtask</Typography>
+          <TextField
+            fullWidth
+            label="Subtask Title"
+            value={editSubtaskTitle}
+            onChange={e => setEditSubtaskTitle(e.target.value)}
+            sx={{ mt: 2 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseEditSubtaskDialog} color="inherit">Cancel</Button>
+          <Button onClick={handleSaveSubtask} variant="contained">Save</Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={openDeleteSubtaskDialog} onClose={handleCloseDeleteSubtaskDialog}>
+        <DialogContent>
+          <Typography>Do you really want to delete this subtask?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteSubtaskDialog} color="inherit">Cancel</Button>
+          <Button onClick={confirmDeleteSubtask} color="error" variant="contained">Delete</Button>
         </DialogActions>
       </Dialog>
     </Container>

@@ -143,6 +143,14 @@ export function OverviewAppView() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [animatingTaskId, setAnimatingTaskId] = useState(null);
 
+  // Add state and handlers for editing/deleting subtasks
+  const [editSubtask, setEditSubtask] = useState(null);
+  const [editSubtaskTitle, setEditSubtaskTitle] = useState('');
+  const [openEditSubtaskDialog, setOpenEditSubtaskDialog] = useState(false);
+  const [subtaskToDelete, setSubtaskToDelete] = useState(null);
+  const [openDeleteSubtaskDialog, setOpenDeleteSubtaskDialog] = useState(false);
+  const [currentTaskForSubtask, setCurrentTaskForSubtask] = useState(null); // To know which task the subtask belongs to
+
   // Determine initial view based on screen width
   useEffect(() => {
     const handleResize = () => {
@@ -310,6 +318,11 @@ export function OverviewAppView() {
         completed_at: newStatus === 'completed' ? getCurrentTimeGMT530() : null
       }).eq('id', task.id);
 
+      // If the task is marked as complete, mark all its subtasks as complete
+      if (newStatus === 'completed') {
+        await supabase.from('subtasks').update({ completed: true }).eq('task_id', task.task_id);
+      }
+
       await fetchTasks();
       setAnimatingTaskId(null);
 
@@ -326,7 +339,26 @@ export function OverviewAppView() {
   };
 
   // Filtering logic for search, date range, and tags
-  const localTimezone = typeof window !== 'undefined' ? dayjs.tz.guess() : 'UTC'; // Default to UTC on server
+  let filteredTasks = tasks;
+  if (searchText) {
+    filteredTasks = filteredTasks.filter(task =>
+      task.title?.toLowerCase().includes(searchText.toLowerCase())
+    );
+  }
+  if (startDate) {
+    filteredTasks = filteredTasks.filter(task => task.due_date >= dayjs(startDate).format('YYYY-MM-DD'));
+  }
+  if (endDate) {
+    filteredTasks = filteredTasks.filter(task => task.due_date <= dayjs(endDate).format('YYYY-MM-DD'));
+  }
+  if (selectedTags.length > 0) {
+    filteredTasks = filteredTasks.filter(task =>
+      task.tags && task.tags.some(tag => selectedTags.some(sel => sel.tag_id === tag.tag_id))
+    );
+  }
+
+  // Filtering logic for tabs
+  const localTimezone = dayjs.tz.guess(); // Get user's local timezone
   const serverTimezone = 'Asia/Kolkata'; // Assuming server timezone based on previous code
 
   // Define date boundaries based on the user's local timezone, normalized to the start of the day
@@ -337,42 +369,16 @@ export function OverviewAppView() {
   const monthStart = dayjs().tz(localTimezone).startOf('month');
   const monthEnd = dayjs().tz(localTimezone).endOf('month'); // Keep end of month at end of day for inclusive range
 
-  // Apply filters
-  let filteredTasks = tasks.filter(task => {
-    // First, apply search, date range, and tag filters
-    const matchesSearch = searchText
-      ? task.title?.toLowerCase().includes(searchText.toLowerCase())
-      : true;
-
-    let taskDateForRange = null;
-    if (task.status === 'completed') {
-      taskDateForRange = task.completed_at ? dayjs.utc(task.completed_at) : null; // Assuming completed_at is UTC
-    } else {
-      // Assuming due_date is stored in YYYY-MM-DD HH:mm format in server timezone
-      taskDateForRange = task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null;
-    }
-
-    const matchesDateRange = (startDate || endDate)
-      ? (taskDateForRange && taskDateForRange.isValid() &&
-        (!startDate || taskDateForRange.tz(localTimezone).startOf('day').isSameOrAfter(dayjs(startDate).tz(localTimezone).startOf('day'), 'day')) &&
-        (!endDate || taskDateForRange.tz(localTimezone).startOf('day').isSameOrBefore(dayjs(endDate).tz(localTimezone).startOf('day'), 'day'))
-      )
-      : true;
-
-    const matchesTags = selectedTags.length > 0
-      ? (task.tags && task.tags.some(tag => selectedTags.some(sel => sel.tag_id === tag.tag_id)))
-      : true;
-
-    return matchesSearch && matchesDateRange && matchesTags;
-  });
-
-  // Then, apply tab filtering based on the filtered tasks
   if (tab === 'today') {
     filteredTasks = filteredTasks.filter(task => {
-      // Get the relevant task date (due or completed)
-      const taskDate = task.status === 'completed'
-        ? (task.completed_at ? dayjs.utc(task.completed_at) : null) // Assuming completed_at is UTC
-        : (task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null); // Assuming due_date format/timezone
+      let taskDate = null;
+      if (task.status === 'completed') {
+        // Assuming completed_at is UTC, parse as UTC and then convert to local
+        taskDate = task.completed_at ? dayjs.utc(task.completed_at) : null;
+      } else {
+        // Assuming due_date is stored in YYYY-MM-DD HH:mm format in server timezone, parse with format and timezone
+        taskDate = task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null;
+      }
 
       if (!taskDate || !taskDate.isValid()) return false;
 
@@ -384,14 +390,15 @@ export function OverviewAppView() {
     });
   } else if (tab === 'tomorrow') {
     filteredTasks = filteredTasks.filter(task => {
-      // Get the relevant task date (due or completed)
-      const taskDate = task.status === 'completed'
-        ? (task.completed_at ? dayjs.utc(task.completed_at) : null) // Assuming completed_at is UTC
-        : (task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null); // Assuming due_date format/timezone
+      let taskDate = null;
+      if (task.status === 'completed') {
+        taskDate = task.completed_at ? dayjs.utc(task.completed_at) : null;
+      } else {
+        taskDate = task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null;
+      }
 
       if (!taskDate || !taskDate.isValid()) return false;
 
-      // Convert task date to local timezone and normalize to start of day for comparison
       const taskDateLocalNormalized = taskDate.tz(localTimezone).startOf('day');
 
       // Filter for tasks where the normalized date is the same as tomorrow's normalized date in local time
@@ -399,10 +406,12 @@ export function OverviewAppView() {
     });
   } else if (tab === 'week') {
     filteredTasks = filteredTasks.filter(task => {
-      // Get the relevant task date (due or completed)
-      const taskDate = task.status === 'completed'
-        ? (task.completed_at ? dayjs.utc(task.completed_at) : null) // Assuming completed_at is UTC
-        : (task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null); // Assuming due_date format/timezone
+      let taskDate = null;
+      if (task.status === 'completed') {
+        taskDate = task.completed_at ? dayjs.utc(task.completed_at) : null;
+      } else {
+        taskDate = task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null;
+      }
 
       if (!taskDate || !taskDate.isValid()) return false;
 
@@ -410,15 +419,16 @@ export function OverviewAppView() {
       const taskDateLocalNormalized = taskDate.tz(localTimezone).startOf('day');
 
       // Filter for tasks where the normalized date is within the local week range
-      // Note: Week and month boundaries are based on the user's local timezone as well
       return taskDateLocalNormalized.isBetween(weekStart, weekEnd, 'day', '[]');
     });
   } else if (tab === 'month') {
     filteredTasks = filteredTasks.filter(task => {
-      // Get the relevant task date (due or completed)
-      const taskDate = task.status === 'completed'
-        ? (task.completed_at ? dayjs.utc(task.completed_at) : null) // Assuming completed_at is UTC
-        : (task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null); // Assuming due_date format/timezone
+      let taskDate = null;
+      if (task.status === 'completed') {
+        taskDate = task.completed_at ? dayjs.utc(task.completed_at) : null;
+      } else {
+        taskDate = task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null;
+      }
 
       if (!taskDate || !taskDate.isValid()) return false;
 
@@ -439,7 +449,6 @@ export function OverviewAppView() {
       return true;
     });
   } else if (tab === 'completed') {
-    // Completed tab shows all completed tasks, regardless of date
     filteredTasks = filteredTasks.filter(task => task.status === 'completed');
   }
 
@@ -472,6 +481,52 @@ export function OverviewAppView() {
       .eq('id', subtask.id);
     // Immediately fetch tasks to update the UI
     await fetchTasks();
+  };
+
+  const handleEditSubtask = (subtask, taskId) => {
+    setEditSubtask(subtask);
+    setEditSubtaskTitle(subtask.title);
+    setCurrentTaskForSubtask(taskId);
+    setOpenEditSubtaskDialog(true);
+  };
+
+  const handleCloseEditSubtaskDialog = () => {
+    setOpenEditSubtaskDialog(false);
+    setEditSubtask(null);
+    setEditSubtaskTitle('');
+    setCurrentTaskForSubtask(null);
+  };
+
+  const handleSaveSubtask = async () => {
+    if (!editSubtask) return;
+    await supabase
+      .from('subtasks')
+      .update({ title: editSubtaskTitle })
+      .eq('id', editSubtask.id);
+    handleCloseEditSubtaskDialog();
+    fetchTasks(); // Refresh tasks after saving subtask
+  };
+
+  const handleDeleteSubtask = (subtask, taskId) => {
+    setSubtaskToDelete(subtask);
+    setCurrentTaskForSubtask(taskId);
+    setOpenDeleteSubtaskDialog(true);
+  };
+
+  const handleCloseDeleteSubtaskDialog = () => {
+    setOpenDeleteSubtaskDialog(false);
+    setSubtaskToDelete(null);
+    setCurrentTaskForSubtask(null);
+  };
+
+  const confirmDeleteSubtask = async () => {
+    if (!subtaskToDelete) return;
+    await supabase
+      .from('subtasks')
+      .delete()
+      .eq('id', subtaskToDelete.id);
+    handleCloseDeleteSubtaskDialog();
+    fetchTasks(); // Refresh tasks after deleting subtask
   };
 
   return (
@@ -825,6 +880,14 @@ export function OverviewAppView() {
                                         >
                                           {sub.title}
                                         </Typography>
+                                        <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
+                                          <IconButton size="small" onClick={() => handleEditSubtask(sub, task.id)} sx={{ color: 'primary.main' }}>
+                                            <Iconify icon="solar:pen-bold" />
+                                          </IconButton>
+                                          <IconButton size="small" onClick={() => handleDeleteSubtask(sub, task.id)} sx={{ color: 'error.main' }}>
+                                            <Iconify icon="solar:trash-bin-trash-bold" />
+                                          </IconButton>
+                                        </Stack>
                                       </Box>
                                     ))}
                                   </Stack>
@@ -1047,6 +1110,14 @@ export function OverviewAppView() {
                                               >
                                                 {sub.title}
                                               </Typography>
+                                              <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
+                                                <IconButton size="small" onClick={() => handleEditSubtask(sub, task.id)} sx={{ color: 'primary.main' }}>
+                                                  <Iconify icon="solar:pen-bold" />
+                                                </IconButton>
+                                                <IconButton size="small" onClick={() => handleDeleteSubtask(sub, task.id)} sx={{ color: 'error.main' }}>
+                                                  <Iconify icon="solar:trash-bin-trash-bold" />
+                                                </IconButton>
+                                              </Stack>
                                             </Box>
                                           ))}
                                         </Stack>

@@ -3,7 +3,6 @@ import 'src/styles/strikethrough.css';
 
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
-import Script from 'next/script';
 
 import { CONFIG } from 'src/global-config';
 import { primary } from 'src/theme/core/palette';
@@ -81,6 +80,17 @@ export default async function RootLayout({ children }) {
 
   return (
     <html lang={appConfig.lang} dir={appConfig.dir} suppressHydrationWarning>
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-EHDDSG746H" />
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-EHDDSG746H');
+          `,
+        }}
+      />
       <body>
         <InitColorSchemeScript
           modeStorageKey={themeConfig.modeStorageKey}
@@ -115,24 +125,6 @@ export default async function RootLayout({ children }) {
           </AuthProvider>
         </I18nProvider>
       </body>
-
-      <Script
-        async
-        src="https://www.googletagmanager.com/gtag/js?id=G-EHDDSG746H"
-        strategy="afterInteractive"
-      />
-      <Script
-        id="google-analytics-init"
-        dangerouslySetInnerHTML={{
-          __html: `
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-EHDDSG746H');
-          `,
-        }}
-        strategy="afterInteractive"
-      />
     </html>
   );
 }

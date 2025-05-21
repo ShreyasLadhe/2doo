@@ -342,12 +342,22 @@ function TaskViewDialog({ task, onClose }) {
     await supabase
       .from('subtasks')
       .update({ completed: newChecked[index] })
-      .eq('subtask_id', subtask.subtask_id);
-    setSubtasks((prev) => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], completed: newChecked[index] };
-      return updated;
-    });
+      .eq('id', subtask.id);
+    // Refresh the task view in the dialog
+    if (task) {
+      // Re-fetch subtasks for the currently viewed task
+      const { data: updatedSubtasks } = await supabase
+        .from('subtasks')
+        .select('*')
+        .eq('task_id', task.task_id);
+      setSubtasks(updatedSubtasks || []);
+      setChecked((updatedSubtasks || []).map((sub) => !!sub.completed));
+    }
+    // Call the parent's onSubtaskToggle to refresh the task list view if provided
+    if (onSubtaskToggle) {
+      // Pass the task object or ID to help parent identify which task needs update
+      onSubtaskToggle(task.id); // Assuming onSubtaskToggle accepts task ID
+    }
   };
 
   // Edit subtask handlers
@@ -362,12 +372,18 @@ function TaskViewDialog({ task, onClose }) {
     setEditTitle('');
   };
   const handleEditSubtask = async () => {
+    if (!editSubtask) return;
     await supabase
       .from('subtasks')
       .update({ title: editTitle })
       .eq('id', editSubtask.id);
+    // Refresh the subtasks in the dialog
     setSubtasks((prev) => prev.map(s => s.id === editSubtask.id ? { ...s, title: editTitle } : s));
     closeEditDialog();
+    // Notify parent to refresh the main task list if needed
+    if (onSubtaskToggle) {
+      onSubtaskToggle(task.id);
+    }
   };
 
   // Delete subtask handlers
@@ -380,13 +396,19 @@ function TaskViewDialog({ task, onClose }) {
     setSubtaskToDelete(null);
   };
   const handleDeleteSubtask = async () => {
+    if (!subtaskToDelete) return;
     await supabase
       .from('subtasks')
       .delete()
       .eq('id', subtaskToDelete.id);
+    // Refresh the subtasks in the dialog
     setSubtasks((prev) => prev.filter(s => s.id !== subtaskToDelete.id));
     setChecked((prev) => prev.filter((_, idx) => subtasks[idx].id !== subtaskToDelete.id));
     closeDeleteDialog();
+    // Notify parent to refresh the main task list
+    if (onSubtaskToggle) {
+      onSubtaskToggle(task.id);
+    }
   };
 
   // In the TaskViewDialog, update the display for due date and completion date.

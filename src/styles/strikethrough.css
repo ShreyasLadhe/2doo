@@ -10,17 +10,15 @@
 }
 
 .strikethrough-animation {
-  position: relative;
+  /* Remove absolute positioning and pseudo-element approach */
+  /* We will rely on standard text-decoration */
 }
 
-.strikethrough-animation.animate::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: 100%;
-  height: 2px;
-  background-color: currentColor;
-  animation: strikethrough 0.5s ease-in-out forwards;
-  transform-origin: left;
-} 
+.strikethrough-animation.animate {
+  text-decoration: line-through;
+  /* Optional: Add animation for color or other properties if needed */
+  /* For now, just ensure the strikethrough is present and aligned */
+  text-decoration-color: currentColor; /* Use text color for strikethrough */
+  text-decoration-thickness: 2px; /* Adjust thickness as needed */
+}
+/* Remove ::after pseudo-element rules */ 
