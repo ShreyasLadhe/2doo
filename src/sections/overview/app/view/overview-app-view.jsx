@@ -345,38 +345,88 @@ export function OverviewAppView() {
   }
 
   // Filtering logic for tabs
-  const todayStart = dayjs().startOf('day');
-  const todayEnd = dayjs().endOf('day');
-  const tomorrowStart = dayjs().add(1, 'day').startOf('day');
-  const tomorrowEnd = dayjs().add(1, 'day').endOf('day');
-  const weekStart = dayjs().startOf('week');
-  const weekEnd = dayjs().endOf('week');
-  const monthStart = dayjs().startOf('month');
-  const monthEnd = dayjs().endOf('month');
+  const localTimezone = dayjs.tz.guess(); // Get user's local timezone
+  const serverTimezone = 'Asia/Kolkata'; // Assuming server timezone based on previous code
+
+  // Define date boundaries based on the user's local timezone, normalized to the start of the day
+  const todayStart = dayjs().tz(localTimezone).startOf('day');
+  const tomorrowStart = dayjs().tz(localTimezone).add(1, 'day').startOf('day');
+  const weekStart = dayjs().tz(localTimezone).startOf('week');
+  const weekEnd = dayjs().tz(localTimezone).endOf('week'); // Keep end of week at end of day for inclusive range
+  const monthStart = dayjs().tz(localTimezone).startOf('month');
+  const monthEnd = dayjs().tz(localTimezone).endOf('month'); // Keep end of month at end of day for inclusive range
 
   if (tab === 'today') {
-    filteredTasks = filteredTasks.filter(task =>
-      (task.status !== 'completed' && task.due_date && dayjs(task.due_date).isBetween(todayStart, todayEnd, 'minute', '[]')) ||
-      (task.status === 'completed' && task.completed_at && dayjs.utc(task.completed_at).tz(dayjs.tz.guess()).isBetween(todayStart, todayEnd, 'minute', '[]'))
-    );
-  } else if (tab === 'tomorrow') {
-    filteredTasks = filteredTasks.filter(task =>
-      (task.status !== 'completed' && task.due_date && dayjs(task.due_date).isBetween(tomorrowStart, tomorrowEnd, 'minute', '[]')) ||
-      (task.status === 'completed' && task.completed_at && dayjs.utc(task.completed_at).tz(dayjs.tz.guess()).isBetween(tomorrowStart, tomorrowEnd, 'minute', '[]'))
-    );
-  } else if (tab === 'week') {
-    filteredTasks = filteredTasks.filter(
-      task =>
-        (task.status !== 'completed' && task.due_date && dayjs(task.due_date).isBetween(weekStart, weekEnd, 'minute', '[]')) ||
-        (task.status === 'completed' && task.completed_at && dayjs.utc(task.completed_at).tz(dayjs.tz.guess()).isBetween(weekStart, weekEnd, 'minute', '[]'))
-    );
-  } else if (tab === 'month') {
-    filteredTasks = filteredTasks.filter(task =>
-      (task.status !== 'completed' && task.due_date && dayjs(task.due_date).isBetween(monthStart, monthEnd, 'minute', '[]')) ||
-      (task.status === 'completed' && task.completed_at && dayjs.utc(task.completed_at).tz(dayjs.tz.guess()).isBetween(monthStart, monthEnd, 'minute', '[]'))
-    );
+    filteredTasks = filteredTasks.filter(task => {
+      let taskDate = null;
+      if (task.status === 'completed') {
+        // Assuming completed_at is UTC, parse as UTC and then convert to local
+        taskDate = task.completed_at ? dayjs.utc(task.completed_at) : null;
+      } else {
+        // Assuming due_date is stored in YYYY-MM-DD HH:mm format in server timezone, parse with format and timezone
+        taskDate = task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null;
+      }
 
-    // Remove duplicates by task ID
+      if (!taskDate || !taskDate.isValid()) return false;
+
+      // Convert task date to local timezone and normalize to start of day for comparison
+      const taskDateLocalNormalized = taskDate.tz(localTimezone).startOf('day');
+
+      // Filter for tasks where the normalized date is the same as today's normalized date in local time
+      return taskDateLocalNormalized.isSame(todayStart, 'day');
+    });
+  } else if (tab === 'tomorrow') {
+    filteredTasks = filteredTasks.filter(task => {
+      let taskDate = null;
+      if (task.status === 'completed') {
+        taskDate = task.completed_at ? dayjs.utc(task.completed_at) : null;
+      } else {
+        taskDate = task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null;
+      }
+
+      if (!taskDate || !taskDate.isValid()) return false;
+
+      const taskDateLocalNormalized = taskDate.tz(localTimezone).startOf('day');
+
+      // Filter for tasks where the normalized date is the same as tomorrow's normalized date in local time
+      return taskDateLocalNormalized.isSame(tomorrowStart, 'day');
+    });
+  } else if (tab === 'week') {
+    filteredTasks = filteredTasks.filter(task => {
+      let taskDate = null;
+      if (task.status === 'completed') {
+        taskDate = task.completed_at ? dayjs.utc(task.completed_at) : null;
+      } else {
+        taskDate = task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null;
+      }
+
+      if (!taskDate || !taskDate.isValid()) return false;
+
+      // Convert task date to local timezone and normalize to start of day for comparison
+      const taskDateLocalNormalized = taskDate.tz(localTimezone).startOf('day');
+
+      // Filter for tasks where the normalized date is within the local week range
+      return taskDateLocalNormalized.isBetween(weekStart, weekEnd, 'day', '[]');
+    });
+  } else if (tab === 'month') {
+    filteredTasks = filteredTasks.filter(task => {
+      let taskDate = null;
+      if (task.status === 'completed') {
+        taskDate = task.completed_at ? dayjs.utc(task.completed_at) : null;
+      } else {
+        taskDate = task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null;
+      }
+
+      if (!taskDate || !taskDate.isValid()) return false;
+
+      // Convert task date to local timezone and normalize to start of day for comparison
+      const taskDateLocalNormalized = taskDate.tz(localTimezone).startOf('day');
+
+      // Filter for tasks where the normalized date is within the local month range
+      return taskDateLocalNormalized.isBetween(monthStart, monthEnd, 'day', '[]');
+    });
+
+    // Remove duplicates by task ID (This logic seems specific to month, keeping it as is)
     const uniqueTaskIds = new Set();
     filteredTasks = filteredTasks.filter(task => {
       if (uniqueTaskIds.has(task.id)) {
