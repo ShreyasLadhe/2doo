@@ -87,9 +87,23 @@ export function HomeMinimal({ sx, ...other }) {
       >
         <Box
           component="img"
-          alt="Home chart"
-          src={`${CONFIG.assetsDir}/assets/images/home/home-chart.webp`}
-          sx={{ width: 720 }}
+          alt="Weekly Task Distribution"
+          src="/assets/images/home/weekly-task-distribution.jpg"
+          sx={{
+            width: '100%',
+            maxWidth: 600,
+            height: 'auto',
+            borderRadius: 3,
+            objectFit: 'contain',
+            boxShadow: 6,
+            display: 'block',
+            mx: { xs: 'auto', md: 0 },
+            ml: { md: -2, lg: -3 },
+            position: 'relative',
+            p: { xs: 1, md: 2 },
+            backgroundColor: 'background.paper',
+            boxSizing: 'border-box',
+          }}
         />
       </Box>
     </Stack>
@@ -142,12 +156,13 @@ const ITEMS = [
     ),
   },
   {
-    title: 'Custom Reminders',
-    description: 'Never miss a deadline. Set flexible reminders for your tasks and get notified when it matters most.',
+    title: 'Overdue Reminders',
+    description: 'Get instantly notified when a task becomes overdue, so you never miss important deadlines.',
     icon: (
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="12" cy="12" r="10" fill="#FFAB00" fillOpacity="0.12" />
         <path d="M12 8v4l3 2" stroke="#FFAB00" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="18" cy="6" r="2" fill="#FF5630" fillOpacity="0.8" />
       </svg>
     ),
   },

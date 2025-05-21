@@ -83,18 +83,17 @@ const renderDescription = () => (
         typography: { xs: 'h2', md: 'h1' },
       }}
     >
-      Get started with
-      <br /> 2DOO
+      {`Let's Strikeoff your first task.`}
       <Box
-        component="span"
-        sx={(theme) => ({
-          ...theme.mixins.textGradient(
-            `to right, ${theme.vars.palette.common.white}, ${varAlpha(theme.vars.palette.common.whiteChannel, 0.4)}`
-          ),
-          ml: 1,
-        })}
+        component="div"
+        sx={{
+          fontSize: { xs: 18, md: 22 },
+          fontWeight: 400,
+          color: 'grey.300',
+          mt: 1,
+        }}
       >
-        today
+        Get started with 2DOO today!
       </Box>
     </Box>
 
@@ -111,9 +110,9 @@ const renderDescription = () => (
           color="primary"
           size="large"
           variant="contained"
-          target="_blank"
-          rel="noopener"
-          href={paths.minimalStore}
+          target="_self"
+          rel={undefined}
+          href={paths.auth.supabase.signUp}
         >
           Sign Up
         </Button>
