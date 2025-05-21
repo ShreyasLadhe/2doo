@@ -690,7 +690,6 @@ export function OverviewAppView() {
                                     onChange={() => handleMarkCompleteTask(task)}
                                     color="success"
                                     sx={{ mr: 1 }}
-                                    disabled={task.status === 'completed'}
                                   />
                                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <Typography
@@ -912,7 +911,6 @@ export function OverviewAppView() {
                                           onChange={() => handleMarkCompleteTask(task)}
                                           color="success"
                                           sx={{ mr: 1 }}
-                                          disabled={task.status === 'completed'}
                                         />
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                           <Typography
