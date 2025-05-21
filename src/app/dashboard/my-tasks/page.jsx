@@ -671,7 +671,7 @@ export default function MyTasksPage() {
                             </Box>
                           )}
                           {completionDateTime && (
-                            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1, flexWrap: 'wrap' }}>
                               <Chip
                                 label={
                                   <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 0 }}>
@@ -683,6 +683,18 @@ export default function MyTasksPage() {
                                 icon={<Iconify icon="solar:check-circle-bold-duotone" />}
                                 variant="soft"
                                 color="success"
+                              />
+                              <Chip
+                                label={
+                                  <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 0 }}>
+                                    <span style={{ fontWeight: 500, color: 'text.secondary' }}>Due: {date}</span>
+                                    <span style={{ color: '#aaa', fontSize: '0.95em', marginLeft: 8 }}>{time}</span>
+                                  </Box>
+                                }
+                                size="small"
+                                icon={<Iconify icon="solar:calendar-bold" />}
+                                variant="soft"
+                                sx={{ bgcolor: 'background.neutral' }}
                               />
                             </Stack>
                           )}
@@ -885,7 +897,7 @@ export default function MyTasksPage() {
                                   </Box>
                                 )}
                                 {completionDateTime && (
-                                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1, flexWrap: 'wrap' }}>
                                     <Chip
                                       label={
                                         <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 0 }}>
@@ -897,6 +909,18 @@ export default function MyTasksPage() {
                                       icon={<Iconify icon="solar:check-circle-bold-duotone" />}
                                       variant="soft"
                                       color="success"
+                                    />
+                                    <Chip
+                                      label={
+                                        <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 0 }}>
+                                          <span style={{ fontWeight: 500, color: 'text.secondary' }}>Due: {date}</span>
+                                          <span style={{ color: '#aaa', fontSize: '0.95em', marginLeft: 8 }}>{time}</span>
+                                        </Box>
+                                      }
+                                      size="small"
+                                      icon={<Iconify icon="solar:calendar-bold" />}
+                                      variant="soft"
+                                      sx={{ bgcolor: 'background.neutral' }}
                                     />
                                   </Stack>
                                 )}
