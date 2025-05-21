@@ -68,7 +68,7 @@ export function HomeMinimal({ sx, ...other }) {
         sx={[
           (theme) => ({
             left: -80,
-            minWidth: 800,
+            minWidth: 750,
             borderRadius: 2.5,
             position: 'absolute',
             bgcolor: 'background.default',
