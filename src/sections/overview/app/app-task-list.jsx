@@ -119,6 +119,7 @@ export function AppTaskList({
   selectedTags = [],
   onTagFilterChange = () => { },
   animatingTaskId,
+  onSubtaskToggle,
   ...other
 }) {
   const [viewTask, setViewTask] = useState(null);
@@ -148,6 +149,10 @@ export function AppTaskList({
     // Refresh the task view
     if (viewTask) {
       handleViewTask(viewTask);
+    }
+    // Call the parent's onSubtaskToggle to refresh the task list
+    if (onSubtaskToggle) {
+      onSubtaskToggle(subtask);
     }
   };
 
@@ -287,6 +292,7 @@ AppTaskList.propTypes = {
   subheader: PropTypes.string,
   tableData: PropTypes.array,
   headCells: PropTypes.array,
+  sx: PropTypes.object,
   hideViewAll: PropTypes.bool,
   onEditTask: PropTypes.func,
   onDeleteTask: PropTypes.func,
@@ -300,6 +306,7 @@ AppTaskList.propTypes = {
   selectedTags: PropTypes.array,
   onTagFilterChange: PropTypes.func,
   animatingTaskId: PropTypes.string,
+  onSubtaskToggle: PropTypes.func,
 };
 
 // ----------------------------------------------------------------------

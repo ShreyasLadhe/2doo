@@ -423,6 +423,15 @@ export function OverviewAppView() {
     return result;
   }
 
+  const handleSubtaskToggle = async (subtask) => {
+    await supabase
+      .from('subtasks')
+      .update({ completed: !subtask.completed })
+      .eq('id', subtask.id);
+    // Immediately fetch tasks to update the UI
+    await fetchTasks();
+  };
+
   return (
     <DashboardContent maxWidth="xl">
       {showConfetti && <ConfettiAnimation />}
@@ -1087,6 +1096,7 @@ export function OverviewAppView() {
               selectedTags={selectedTags}
               onTagFilterChange={setSelectedTags}
               animatingTaskId={animatingTaskId}
+              onSubtaskToggle={handleSubtaskToggle}
             />
           )}
         </Grid>
