@@ -69,7 +69,7 @@ export function HomeMinimal({ sx, ...other }) {
           (theme) => ({
             left: -80,
             minWidth: 800,
-            borderRadius: 2,
+            borderRadius: 2.5,
             position: 'absolute',
             bgcolor: 'background.default',
             boxShadow: `-40px 40px 80px 0px ${varAlpha(
