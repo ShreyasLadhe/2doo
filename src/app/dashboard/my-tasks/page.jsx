@@ -334,16 +334,20 @@ export default function MyTasksPage() {
     setTaskToDelete(null);
   };
 
-  // Mark task as complete
+  // Mark task as complete/incomplete
   const handleMarkCompleteTask = async (task) => {
-    setAnimatingTaskId(task.id);
-    setShowConfetti(true);
+    const newStatus = task.status === 'completed' ? 'pending' : 'completed';
+
+    if (newStatus === 'completed') {
+      setAnimatingTaskId(task.id);
+      setShowConfetti(true);
+    }
 
     // Wait for strikethrough animation to complete before updating the database
     setTimeout(async () => {
       await supabase.from('tasks').update({
-        status: 'completed',
-        completed_at: getCurrentTimeGMT530()
+        status: newStatus,
+        completed_at: newStatus === 'completed' ? getCurrentTimeGMT530() : null
       }).eq('id', task.id);
 
       await fetchTasks();
@@ -353,7 +357,7 @@ export default function MyTasksPage() {
       setTimeout(() => {
         setShowConfetti(false);
       }, 1000);
-    }, 1000); // Increased from 500ms to 1000ms to ensure strikethrough completes
+    }, 1000);
   };
 
   return (

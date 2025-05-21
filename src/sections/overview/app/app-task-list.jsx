@@ -602,7 +602,6 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
               onChange={() => onMarkCompleteTask(row)}
               color='success'
               sx={{ mr: 1, p: 0.5 }}
-              disabled={row.status === 'completed'}
             />
             <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', ml: 1 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
