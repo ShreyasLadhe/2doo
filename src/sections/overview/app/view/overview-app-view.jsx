@@ -326,26 +326,7 @@ export function OverviewAppView() {
   };
 
   // Filtering logic for search, date range, and tags
-  let filteredTasks = tasks;
-  if (searchText) {
-    filteredTasks = filteredTasks.filter(task =>
-      task.title?.toLowerCase().includes(searchText.toLowerCase())
-    );
-  }
-  if (startDate) {
-    filteredTasks = filteredTasks.filter(task => task.due_date >= dayjs(startDate).format('YYYY-MM-DD'));
-  }
-  if (endDate) {
-    filteredTasks = filteredTasks.filter(task => task.due_date <= dayjs(endDate).format('YYYY-MM-DD'));
-  }
-  if (selectedTags.length > 0) {
-    filteredTasks = filteredTasks.filter(task =>
-      task.tags && task.tags.some(tag => selectedTags.some(sel => sel.tag_id === tag.tag_id))
-    );
-  }
-
-  // Filtering logic for tabs
-  const localTimezone = dayjs.tz.guess(); // Get user's local timezone
+  const localTimezone = typeof window !== 'undefined' ? dayjs.tz.guess() : 'UTC'; // Default to UTC on server
   const serverTimezone = 'Asia/Kolkata'; // Assuming server timezone based on previous code
 
   // Define date boundaries based on the user's local timezone, normalized to the start of the day
@@ -356,16 +337,42 @@ export function OverviewAppView() {
   const monthStart = dayjs().tz(localTimezone).startOf('month');
   const monthEnd = dayjs().tz(localTimezone).endOf('month'); // Keep end of month at end of day for inclusive range
 
+  // Apply filters
+  let filteredTasks = tasks.filter(task => {
+    // First, apply search, date range, and tag filters
+    const matchesSearch = searchText
+      ? task.title?.toLowerCase().includes(searchText.toLowerCase())
+      : true;
+
+    let taskDateForRange = null;
+    if (task.status === 'completed') {
+      taskDateForRange = task.completed_at ? dayjs.utc(task.completed_at) : null; // Assuming completed_at is UTC
+    } else {
+      // Assuming due_date is stored in YYYY-MM-DD HH:mm format in server timezone
+      taskDateForRange = task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null;
+    }
+
+    const matchesDateRange = (startDate || endDate)
+      ? (taskDateForRange && taskDateForRange.isValid() &&
+        (!startDate || taskDateForRange.tz(localTimezone).startOf('day').isSameOrAfter(dayjs(startDate).tz(localTimezone).startOf('day'), 'day')) &&
+        (!endDate || taskDateForRange.tz(localTimezone).startOf('day').isSameOrBefore(dayjs(endDate).tz(localTimezone).startOf('day'), 'day'))
+      )
+      : true;
+
+    const matchesTags = selectedTags.length > 0
+      ? (task.tags && task.tags.some(tag => selectedTags.some(sel => sel.tag_id === tag.tag_id)))
+      : true;
+
+    return matchesSearch && matchesDateRange && matchesTags;
+  });
+
+  // Then, apply tab filtering based on the filtered tasks
   if (tab === 'today') {
     filteredTasks = filteredTasks.filter(task => {
-      let taskDate = null;
-      if (task.status === 'completed') {
-        // Assuming completed_at is UTC, parse as UTC and then convert to local
-        taskDate = task.completed_at ? dayjs.utc(task.completed_at) : null;
-      } else {
-        // Assuming due_date is stored in YYYY-MM-DD HH:mm format in server timezone, parse with format and timezone
-        taskDate = task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null;
-      }
+      // Get the relevant task date (due or completed)
+      const taskDate = task.status === 'completed'
+        ? (task.completed_at ? dayjs.utc(task.completed_at) : null) // Assuming completed_at is UTC
+        : (task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null); // Assuming due_date format/timezone
 
       if (!taskDate || !taskDate.isValid()) return false;
 
@@ -377,15 +384,14 @@ export function OverviewAppView() {
     });
   } else if (tab === 'tomorrow') {
     filteredTasks = filteredTasks.filter(task => {
-      let taskDate = null;
-      if (task.status === 'completed') {
-        taskDate = task.completed_at ? dayjs.utc(task.completed_at) : null;
-      } else {
-        taskDate = task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null;
-      }
+      // Get the relevant task date (due or completed)
+      const taskDate = task.status === 'completed'
+        ? (task.completed_at ? dayjs.utc(task.completed_at) : null) // Assuming completed_at is UTC
+        : (task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null); // Assuming due_date format/timezone
 
       if (!taskDate || !taskDate.isValid()) return false;
 
+      // Convert task date to local timezone and normalize to start of day for comparison
       const taskDateLocalNormalized = taskDate.tz(localTimezone).startOf('day');
 
       // Filter for tasks where the normalized date is the same as tomorrow's normalized date in local time
@@ -393,12 +399,10 @@ export function OverviewAppView() {
     });
   } else if (tab === 'week') {
     filteredTasks = filteredTasks.filter(task => {
-      let taskDate = null;
-      if (task.status === 'completed') {
-        taskDate = task.completed_at ? dayjs.utc(task.completed_at) : null;
-      } else {
-        taskDate = task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null;
-      }
+      // Get the relevant task date (due or completed)
+      const taskDate = task.status === 'completed'
+        ? (task.completed_at ? dayjs.utc(task.completed_at) : null) // Assuming completed_at is UTC
+        : (task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null); // Assuming due_date format/timezone
 
       if (!taskDate || !taskDate.isValid()) return false;
 
@@ -406,16 +410,15 @@ export function OverviewAppView() {
       const taskDateLocalNormalized = taskDate.tz(localTimezone).startOf('day');
 
       // Filter for tasks where the normalized date is within the local week range
+      // Note: Week and month boundaries are based on the user's local timezone as well
       return taskDateLocalNormalized.isBetween(weekStart, weekEnd, 'day', '[]');
     });
   } else if (tab === 'month') {
     filteredTasks = filteredTasks.filter(task => {
-      let taskDate = null;
-      if (task.status === 'completed') {
-        taskDate = task.completed_at ? dayjs.utc(task.completed_at) : null;
-      } else {
-        taskDate = task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null;
-      }
+      // Get the relevant task date (due or completed)
+      const taskDate = task.status === 'completed'
+        ? (task.completed_at ? dayjs.utc(task.completed_at) : null) // Assuming completed_at is UTC
+        : (task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null); // Assuming due_date format/timezone
 
       if (!taskDate || !taskDate.isValid()) return false;
 
@@ -436,6 +439,7 @@ export function OverviewAppView() {
       return true;
     });
   } else if (tab === 'completed') {
+    // Completed tab shows all completed tasks, regardless of date
     filteredTasks = filteredTasks.filter(task => task.status === 'completed');
   }
 
