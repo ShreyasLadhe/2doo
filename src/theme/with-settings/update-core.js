@@ -32,10 +32,7 @@ export function updateCoreWithSettings(theme, settingsState) {
 
     const updatedPalette = {
       ...colorSchemes?.palette,
-      ...(!isDefaultPrimaryColor && {
-        primary: updatedPrimaryColor,
-        // secondary: updatedSecondaryColor,
-      }),
+      primary: updatedPrimaryColor,
       ...(scheme === 'light' && {
         background: {
           ...lightPalette?.background,

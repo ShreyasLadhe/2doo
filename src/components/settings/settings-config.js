@@ -7,13 +7,13 @@ export const SETTINGS_STORAGE_KEY = 'app-settings';
 // ----------------------------------------------------------------------
 
 export const defaultSettings = {
-  colorScheme: themeConfig.defaultMode,
+  colorScheme: 'light',
   direction: themeConfig.direction,
   contrast: 'default',
   navLayout: 'mini',
-  primaryColor: 'default',
+  primaryColor: 'preset1',
   navColor: 'integrate',
-  compactLayout: true,
+  compactLayout: false,
   fontSize: 16,
   fontFamily: themeConfig.fontFamily.primary,
 };

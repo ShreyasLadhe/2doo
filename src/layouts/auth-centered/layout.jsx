@@ -50,7 +50,7 @@ export function AuthCenteredLayout({ sx, cssVars, children, slotProps, layoutQue
           </Link>
 
           {/** @slot Settings button */}
-          <SettingsButton />
+          {/* <SettingsButton /> */}
         </Box>
       ),
     };

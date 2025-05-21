@@ -1,15 +1,15 @@
-import { primary, secondary } from '../core/palette';
+import { primary, secondary, success } from '../core/palette';
 
 // ----------------------------------------------------------------------
 
 export const primaryColorPresets = {
   default: {
-    lighter: primary.lighter,
-    light: primary.light,
-    main: primary.main,
-    dark: primary.dark,
-    darker: primary.darker,
-    contrastText: primary.contrastText,
+    lighter: success.lighter,
+    light: success.light,
+    main: success.main,
+    dark: success.dark,
+    darker: success.darker,
+    contrastText: success.contrastText,
   },
   preset1: {
     lighter: '#CCF4FE',
