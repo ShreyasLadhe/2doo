@@ -91,7 +91,7 @@ export function HomeMinimal({ sx, ...other }) {
           src="/assets/images/home/weekly-task-distribution.jpg"
           sx={{
             width: '100%',
-            maxWidth: 600,
+            maxWidth: 850,
             height: 'auto',
             borderRadius: 3,
             objectFit: 'contain',
