@@ -545,7 +545,17 @@ export function OverviewAppView() {
               color={cardView ? 'primary' : 'default'}
               onClick={() => setCardView((v) => !v)}
               title={cardView ? 'Switch to List View' : 'Switch to Grid View'}
-              sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center' }}
+              disableRipple
+              sx={{
+                display: { xs: 'none', sm: 'flex' },
+                alignItems: 'center',
+                '&:hover': {
+                  backgroundColor: 'transparent'
+                },
+                '&:active': {
+                  backgroundColor: 'transparent'
+                }
+              }}
             >
               {cardView ? <Iconify icon='solar:list-bold' width={24} /> : <FiGrid size={24} />}
               <Typography variant="body2" sx={{ ml: 1, display: { xs: 'none', sm: 'block' } }}>
