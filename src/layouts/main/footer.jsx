@@ -29,11 +29,11 @@ const LINKS = [
   {
     headline: 'Legal',
     children: [
-      { name: 'Terms and condition', href: '#' },
-      { name: 'Privacy policy', href: '#' },
+      { name: 'Terms and condition', href: '/terms' },
+      { name: 'Privacy policy', href: '/privacy-policy' },
     ],
   },
-  { headline: 'Contact', children: [{ name: 'support@minimals.cc', href: '#' }] },
+  { headline: 'Contact', children: [{ name: 'support@2doo.app', href: '#' }] },
 ];
 
 // ----------------------------------------------------------------------
@@ -169,11 +169,11 @@ export function HomeFooter({ sx, ...other }) {
         <Logo />
         <Box sx={{ mt: 1, typography: 'caption', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
           <Box sx={{ display: 'flex', gap: 2, mb: 0.5 }}>
-            <Link href="#" color="inherit" underline="hover">
+            <Link component={RouterLink} href="/privacy-policy" color="inherit" underline="hover">
               Privacy Policy
             </Link>
             <span>|</span>
-            <Link href="#" color="inherit" underline="hover">
+            <Link component={RouterLink} href="/terms" color="inherit" underline="hover">
               Terms and Conditions
             </Link>
           </Box>
