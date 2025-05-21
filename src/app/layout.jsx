@@ -80,6 +80,17 @@ export default async function RootLayout({ children }) {
 
   return (
     <html lang={appConfig.lang} dir={appConfig.dir} suppressHydrationWarning>
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-EHDDSG746H" />
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-EHDDSG746H');
+          `,
+        }}
+      />
       <body>
         <InitColorSchemeScript
           modeStorageKey={themeConfig.modeStorageKey}
