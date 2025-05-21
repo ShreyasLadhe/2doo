@@ -67,8 +67,8 @@ export function HomeMinimal({ sx, ...other }) {
       <Box
         sx={[
           (theme) => ({
-            left: 0,
-            width: 720,
+            left: -80,
+            minWidth: 800,
             borderRadius: 2,
             position: 'absolute',
             bgcolor: 'background.default',
