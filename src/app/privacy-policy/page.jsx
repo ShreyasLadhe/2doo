@@ -88,7 +88,7 @@ export default function PrivacyPolicyPage() {
                             If you have any questions about this Privacy Policy, please contact us at:
                         </Typography>
                         <Typography variant="body1">
-                            Email: info@f13.tech
+                            Email: 2doo@f13.tech
                         </Typography>
                     </Box>
                 </Paper>

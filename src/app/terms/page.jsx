@@ -90,7 +90,7 @@ export default function TermsPage() {
                             If you have any questions about these Terms and Conditions, please contact us at:
                         </Typography>
                         <Typography variant="body1">
-                            Email: info@f13.tech
+                            Email: 2doo@f13.tech
                         </Typography>
                     </Box>
                 </Paper>
