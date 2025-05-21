@@ -26,6 +26,7 @@ import { AuthProvider as SupabaseAuthProvider } from 'src/auth/context/supabase'
 import { AuthProvider as FirebaseAuthProvider } from 'src/auth/context/firebase';
 
 import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 // ----------------------------------------------------------------------
 
@@ -119,6 +120,7 @@ export default async function RootLayout({ children }) {
                         <SettingsDrawer defaultSettings={defaultSettings} />
                         {children}
                         <Analytics />
+                        <SpeedInsights />
                       </CheckoutProvider>
                     </MotionLazy>
                   </ThemeProvider>
