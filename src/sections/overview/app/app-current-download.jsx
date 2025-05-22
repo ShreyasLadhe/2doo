@@ -6,14 +6,16 @@ import { Chart, useChart, ChartLegends } from 'src/components/chart';
 import { fNumber } from 'src/utils/format-number';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import dayjs from 'dayjs';
 
 export function AppCurrentDownload({ title, subheader, tasks = [], sx, view = 'week', onViewChange, ...other }) {
   const theme = useTheme();
 
   // Helper to check if a task is overdue
   function isOverdue(task) {
-    const today = new Date().toISOString().slice(0, 10);
-    return task.due_date < today && task.status !== 'completed';
+    const now = dayjs();
+    const dueDate = dayjs(task.due_date);
+    return dueDate.isBefore(now) && task.status !== 'completed';
   }
 
   // Get week/month range
