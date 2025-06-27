@@ -2,6 +2,7 @@
 
 import { merge } from 'es-toolkit';
 import { useBoolean } from 'minimal-shared/hooks';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 import Box from '@mui/material/Box';
@@ -40,6 +41,14 @@ import { dashboardLayoutVars, dashboardNavColorVars } from './css-vars';
 import { NotificationsDrawer } from '../components/notifications-drawer';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import ChecklistIcon from '@mui/icons-material/Checklist';
+import { toast } from 'src/components/snackbar';
+import { supabase } from 'src/lib/supabase';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 // ----------------------------------------------------------------------
 
@@ -63,6 +72,86 @@ export function DashboardLayout({ sx, cssVars, children, slotProps, layoutQuery 
   const canDisplayItemByRole = (allowedRoles) => !allowedRoles?.includes(user?.role);
 
   const router = useRouter();
+
+  // Toast notification for tasks due today
+  const notifiedRef = useRef(false);
+  useEffect(() => {
+    async function notifyDueTasks() {
+      if (!user?.id || notifiedRef.current) return;
+      // Get today's date in user's local timezone
+      const localTz = dayjs.tz.guess();
+      const todayStart = dayjs().tz(localTz).startOf('day');
+      const todayEnd = dayjs().tz(localTz).endOf('day');
+      // Fetch tasks for this user
+      const { data: tasks, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('user_id', user.id)
+        .neq('status', 'completed');
+      if (error || !tasks) return;
+      // Show toast for each task due today or overdue
+      tasks.forEach(task => {
+        if (!task.due_date) return;
+        const due = dayjs(task.due_date, 'YYYY-MM-DD HH:mm', 'Asia/Kolkata');
+        if (due.isValid()) {
+          const dueLocal = due.tz(localTz);
+          if (dueLocal.isBefore(todayStart)) {
+            toast.error(`Task ${task.title} is overdue.`, {
+              id: `overdue-${task.id}`,
+              duration: Infinity,
+              closeButton: true,
+              style: {
+                background: 'linear-gradient(90deg, #ff1744 0%, #ff616f 100%)',
+                color: '#fff',
+                fontWeight: 700,
+                boxShadow: '0 4px 24px 0 rgba(255, 23, 68, 0.25)',
+                border: '2px solid #ff1744',
+                borderRadius: '14px',
+                padding: '18px 24px',
+                fontSize: '1.05rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+              },
+              icon: (
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="12" fill="#fff" fillOpacity="0.15"/>
+                  <path d="M12 8v4m0 4h.01" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              ),
+            });
+          } else if (dueLocal.isSame(todayStart, 'day')) {
+            toast.info(`Task ${task.title} is due today.`, {
+              id: `due-today-${task.id}`,
+              duration: Infinity,
+              closeButton: true,
+              style: {
+                background: '#2196f3', // info blue
+                color: '#fff',
+                fontWeight: 700,
+                boxShadow: '0 4px 24px 0 rgba(33, 150, 243, 0.18)',
+                border: '2px solid #2196f3',
+                borderRadius: '14px',
+                padding: '18px 24px',
+                fontSize: '1.05rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+              },
+              icon: (
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="12" fill="#fff" fillOpacity="0.15"/>
+                  <path d="M12 8v4m0 4h.01" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              ),
+            });
+          }
+        }
+      });
+      notifiedRef.current = true;
+    }
+    notifyDueTasks();
+  }, [user]);
 
   const renderHeader = () => {
     const headerSlotProps = {
