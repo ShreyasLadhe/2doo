@@ -89,64 +89,89 @@ export function DashboardLayout({ sx, cssVars, children, slotProps, layoutQuery 
         .eq('user_id', user.id)
         .neq('status', 'completed');
       if (error || !tasks) return;
-      // Show toast for each task due today or overdue
+      
+      // Separate tasks into overdue and due today
+      const overdueTasks = [];
+      const dueTodayTasks = [];
+      
       tasks.forEach(task => {
         if (!task.due_date) return;
         const due = dayjs(task.due_date, 'YYYY-MM-DD HH:mm', 'Asia/Kolkata');
         if (due.isValid()) {
           const dueLocal = due.tz(localTz);
           if (dueLocal.isBefore(todayStart)) {
-            toast.error(`Task ${task.title} is overdue.`, {
-              id: `overdue-${task.id}`,
-              duration: Infinity,
-              closeButton: true,
-              style: {
-                background: 'linear-gradient(90deg, #ff1744 0%, #ff616f 100%)',
-                color: '#fff',
-                fontWeight: 700,
-                boxShadow: '0 4px 24px 0 rgba(255, 23, 68, 0.25)',
-                border: '2px solid #ff1744',
-                borderRadius: '14px',
-                padding: '18px 24px',
-                fontSize: '1.05rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-              },
-              icon: (
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="12" fill="#fff" fillOpacity="0.15"/>
-                  <path d="M12 8v4m0 4h.01" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              ),
-            });
+            overdueTasks.push(task);
           } else if (dueLocal.isSame(todayStart, 'day')) {
-            toast.info(`Task ${task.title} is due today.`, {
-              id: `due-today-${task.id}`,
-              duration: Infinity,
-              closeButton: true,
-              style: {
-                background: '#2196f3', // info blue
-                color: '#fff',
-                fontWeight: 700,
-                boxShadow: '0 4px 24px 0 rgba(33, 150, 243, 0.18)',
-                border: '2px solid #2196f3',
-                borderRadius: '14px',
-                padding: '18px 24px',
-                fontSize: '1.05rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-              },
-              icon: (
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="12" fill="#fff" fillOpacity="0.15"/>
-                  <path d="M12 8v4m0 4h.01" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              ),
-            });
+            dueTodayTasks.push(task);
           }
         }
+      });
+      
+      // Show due today notifications first
+      dueTodayTasks.forEach(task => {
+        toast.info((
+          <>
+            <b>{task.title}</b> is due today.
+          </>
+        ), {
+          id: `due-today-${task.id}`,
+          duration: Infinity,
+          closeButton: true,
+          style: {
+            background: '#2196f3', // info blue
+            color: '#fff',
+            fontWeight: 700,
+            boxShadow: '0 4px 24px 0 rgba(33, 150, 243, 0.18)',
+            border: '2px solid #2196f3',
+            borderRadius: '14px',
+            padding: '18px 24px',
+            fontSize: '1.05rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+          },
+          icon: (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="12" fill="#fff" fillOpacity="0.15"/>
+              <path d="M12 8v4m0 4h.01" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          ),
+        });
+      });
+      // Then show overdue notifications
+      overdueTasks.forEach(task => {
+        const due = dayjs(task.due_date, 'YYYY-MM-DD HH:mm', 'Asia/Kolkata');
+        toast.error((
+          <div>
+            <div><b>{task.title}</b> is overdue.</div>
+            <div style={{ fontSize: '0.95em', opacity: 0.75, marginTop: 4 }}>
+              Due: {due.isValid() ? due.format('DD MMM YYYY, HH:mm') : task.due_date}
+            </div>
+          </div>
+        ), {
+          id: `overdue-${task.id}`,
+          duration: Infinity,
+          closeButton: true,
+          style: {
+            background: 'linear-gradient(90deg, #ff1744 0%, #ff616f 100%)',
+            color: '#fff',
+            fontWeight: 700,
+            boxShadow: '0 4px 24px 0 rgba(255, 23, 68, 0.25)',
+            border: '2px solid #ff1744',
+            borderRadius: '14px',
+            padding: '18px 24px',
+            fontSize: '1.05rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+          },
+          icon: (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="12" fill="#fff" fillOpacity="0.15"/>
+              <path d="M12 8v4m0 4h.01" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          ),
+        });
       });
       notifiedRef.current = true;
     }
