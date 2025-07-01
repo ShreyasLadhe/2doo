@@ -29,6 +29,12 @@ export function AuthGuard({ children }) {
 
   const [isChecking, setIsChecking] = useState(true);
 
+  // Allowlist for routes that should be accessible even if authenticated (e.g., password reset)
+  const allowAuthenticatedAccess = [
+    paths.auth.supabase.updatePassword,
+    paths.auth.supabase.resetPassword,
+  ];
+
   const createRedirectPath = (currentPath) => {
     const queryString = new URLSearchParams({ returnTo: pathname }).toString();
     return `${currentPath}?${queryString}`;
@@ -47,6 +53,12 @@ export function AuthGuard({ children }) {
 
       router.replace(redirectPath);
 
+      return;
+    }
+
+    // If authenticated, allow access to update/reset password routes
+    if (allowAuthenticatedAccess.includes(pathname)) {
+      setIsChecking(false);
       return;
     }
 
