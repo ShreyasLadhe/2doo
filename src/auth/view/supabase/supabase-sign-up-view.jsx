@@ -75,7 +75,7 @@ export function SupabaseSignUpView() {
         lastName: data.lastName,
       });
 
-      router.push(paths.auth.supabase.verify);
+      router.push(paths.dashboard.root);
     } catch (error) {
       console.error(error);
       const feedbackMessage = getErrorMessage(error);
