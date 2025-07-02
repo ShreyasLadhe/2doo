@@ -44,7 +44,8 @@ export const UpdatePasswordSchema = zod
 export function SupabaseUpdatePasswordView() {
   const router = useRouter();
 
-  const showPassword = useBoolean();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -81,14 +82,14 @@ export function SupabaseUpdatePasswordView() {
         name="password"
         label="Password"
         placeholder="6+ characters"
-        type={showPassword.value ? 'text' : 'password'}
+        type={showPassword ? 'text' : 'password'}
         slotProps={{
           inputLabel: { shrink: true },
           input: {
             endAdornment: (
               <InputAdornment position="end">
-                <IconButton onClick={showPassword.onToggle} edge="end">
-                  <Iconify icon={showPassword.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+                <IconButton onClick={() => setShowPassword((v) => !v)} edge="end">
+                  <Iconify icon={showPassword ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
                 </IconButton>
               </InputAdornment>
             ),
@@ -99,14 +100,14 @@ export function SupabaseUpdatePasswordView() {
       <Field.Text
         name="confirmPassword"
         label="Confirm password"
-        type={showPassword.value ? 'text' : 'password'}
+        type={showConfirmPassword ? 'text' : 'password'}
         slotProps={{
           inputLabel: { shrink: true },
           input: {
             endAdornment: (
               <InputAdornment position="end">
-                <IconButton onClick={showPassword.onToggle} edge="end">
-                  <Iconify icon={showPassword.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+                <IconButton onClick={() => setShowConfirmPassword((v) => !v)} edge="end">
+                  <Iconify icon={showConfirmPassword ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
                 </IconButton>
               </InputAdornment>
             ),
