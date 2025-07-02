@@ -15,7 +15,7 @@ export function SupabaseVerifyView() {
       <FormHead
         icon={<EmailInboxIcon />}
         title="Please check your email!"
-        description={`We've emailed the password reset link to you for your email address. \nPlease check your email and click the link to reset your passowrd.`}
+        description={`We've emailed the password reset link to you for your email address. Please check your email and click the link to reset your password.`}
       />
 
       <FormReturnLink href={paths.auth.supabase.signIn} sx={{ mt: 0 }} />
