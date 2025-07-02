@@ -73,8 +73,9 @@ export const signOut = async () => {
 // ----------------------------------------------------------------------
 
 export const resetPassword = async ({ email }) => {
+  const redirectTo = `https://2doo.tech/auth/supabase/update-password`;
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}${paths.auth.supabase.updatePassword}`,
+    redirectTo,
   });
 
   if (error) {
