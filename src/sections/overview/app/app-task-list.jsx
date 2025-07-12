@@ -217,7 +217,7 @@ export function AppTaskList({
           </Typography>
         </Box>
       ) : (
-        <Scrollbar sx={{ minHeight: 402, maxWidth: '100%' }}>
+        <Scrollbar sx={{ minHeight: dense ? 300 : 402, maxWidth: '100%' }}>
           <Table
             sx={{
               minWidth: { xs: '100%', sm: 1100 },
@@ -225,8 +225,8 @@ export function AppTaskList({
               tableLayout: 'fixed',
               mx: 'auto',
               '& .MuiTableCell-root': {
-                px: { xs: 1, sm: 2 },
-                py: { xs: 1.5, sm: 2 },
+                px: dense ? { xs: 0.5, sm: 1 } : { xs: 1, sm: 2 },
+                py: dense ? { xs: 0.75, sm: 1 } : { xs: 1.5, sm: 2 },
               }
             }}
             size={dense ? 'small' : 'medium'}
@@ -611,27 +611,28 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
               : {}),
           display: 'flex',
           alignItems: 'center',
-          gap: 1,
-          py: 1.5,
-          pl: 2,
-          pr: 3,
+          gap: dense ? 0.5 : 1,
+          py: dense ? 1 : 1.5,
+          pl: dense ? 1 : 2,
+          pr: dense ? 2 : 3,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
         }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', minHeight: 40 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', minHeight: dense ? 32 : 40 }}>
             <Checkbox
               checked={row.status === 'completed'}
               onChange={() => onMarkCompleteTask(row)}
               color='success'
-              sx={{ mr: 1, p: 0.5 }}
+              size={dense ? 'small' : 'medium'}
+              sx={{ mr: dense ? 0.5 : 1, p: dense ? 0.25 : 0.5 }}
             />
-            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', ml: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', ml: dense ? 0.5 : 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: dense ? 0.5 : 1 }}>
                 <Typography
-                  variant='body1'
+                  variant={dense ? 'body2' : 'body1'}
                   fontWeight={600}
                   sx={{
-                    lineHeight: 1.2,
+                    lineHeight: dense ? 1.1 : 1.2,
                     ...(row.status === 'completed' && {
                       textDecoration: 'line-through',
                       color: 'success.main',
@@ -649,20 +650,30 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
                   color='error'
                   variant='filled'
                   sx={{
-                    height: 20,
-                    fontSize: '0.75rem',
+                    height: dense ? 16 : 20,
+                    fontSize: dense ? '0.65rem' : '0.75rem',
                     color: 'white',
                     bgcolor: (theme) => theme.palette.error.dark,
-                    mt: 0.5,
-                    mb: 0.5,
+                    mt: dense ? 0.25 : 0.5,
+                    mb: dense ? 0.25 : 0.5,
                     width: 'fit-content'
                   }}
                 />
               )}
               {row.tags && row.tags.length > 0 && (
-                <Stack direction='row' spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
+                <Stack direction='row' spacing={dense ? 0.5 : 1} sx={{ mt: dense ? 0.25 : 0.5, flexWrap: 'wrap' }}>
                   {row.tags.map((tag) => (
-                    <Chip key={tag.tag_id} label={tag.name} size='small' color='info' variant='soft' />
+                    <Chip 
+                      key={tag.tag_id} 
+                      label={tag.name} 
+                      size='small' 
+                      color='info' 
+                      variant='soft'
+                      sx={{
+                        fontSize: dense ? '0.65rem' : '0.75rem',
+                        height: dense ? 20 : 24
+                      }}
+                    />
                   ))}
                 </Stack>
               )}
@@ -674,24 +685,33 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
-          pl: 2
+          pl: dense ? 1 : 2
         }}>
-          <Typography variant='body2' color='text.secondary' sx={{ whiteSpace: 'pre-line', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <Typography 
+            variant={dense ? 'caption' : 'body2'} 
+            color='text.secondary' 
+            sx={{ 
+              whiteSpace: 'pre-line', 
+              overflow: 'hidden', 
+              textOverflow: 'ellipsis',
+              lineHeight: dense ? 1.2 : 1.4
+            }}
+          >
             {row.description}
           </Typography>
         </TableCell>
         <TableCell>
           {hasSubtasks ? (
             <Box>
-              <Stack direction="row" alignItems="center" spacing={1}>
+              <Stack direction="row" alignItems="center" spacing={dense ? 0.5 : 1}>
                 <IconButton
-                  size="small"
+                  size={dense ? 'small' : 'medium'}
                   onClick={() => onToggleSubtasks(row.id)}
-                  sx={{ p: 0.5 }}
+                  sx={{ p: dense ? 0.25 : 0.5 }}
                 >
                   <Iconify
                     icon={expandedSubtasks[row.id] ? 'eva:arrow-ios-upward-fill' : 'eva:arrow-ios-downward-fill'}
-                    width={20}
+                    width={dense ? 16 : 20}
                   />
                 </IconButton>
                 <Box sx={{ flex: 1 }}>
@@ -699,11 +719,11 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
                     variant="determinate"
                     value={progress}
                     sx={{
-                      height: 6,
-                      borderRadius: 1,
+                      height: dense ? 4 : 6,
+                      borderRadius: dense ? 0.5 : 1,
                       backgroundColor: (theme) => theme.palette.grey[200],
                       '& .MuiLinearProgress-bar': {
-                        borderRadius: 1,
+                        borderRadius: dense ? 0.5 : 1,
                         backgroundColor: (theme) =>
                           progress === 100
                             ? theme.palette.success.main
@@ -711,31 +731,40 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
                       },
                     }}
                   />
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                  <Typography 
+                    variant="caption" 
+                    color="text.secondary" 
+                    sx={{ 
+                      mt: dense ? 0.25 : 0.5, 
+                      display: 'block',
+                      fontSize: dense ? '0.65rem' : '0.75rem'
+                    }}
+                  >
                     {completedSubtasks}/{totalSubtasks}
                   </Typography>
                 </Box>
               </Stack>
               {expandedSubtasks[row.id] && (
-                <Box sx={{ mt: 1, pl: 4 }}>
+                <Box sx={{ mt: dense ? 0.5 : 1, pl: dense ? 2 : 4 }}>
                   <List dense disablePadding>
                     {row.subtasks.map((subtask) => (
                       <ListItem
                         key={subtask.id}
                         disableGutters
-                        sx={{ py: 0.5 }}
+                        sx={{ py: dense ? 0.25 : 0.5 }}
                       >
                         <Checkbox
                           checked={subtask.completed}
                           onChange={() => onSubtaskToggle(subtask)}
-                          size="small"
-                          sx={{ mr: 1 }}
+                          size={dense ? 'small' : 'medium'}
+                          sx={{ mr: dense ? 0.5 : 1 }}
                         />
                         <Typography
-                          variant="body2"
+                          variant={dense ? 'caption' : 'body2'}
                           sx={{
                             textDecoration: subtask.completed ? 'line-through' : 'none',
                             color: subtask.completed ? 'success.main' : 'text.primary',
+                            lineHeight: dense ? 1.2 : 1.4
                           }}
                         >
                           {subtask.title}
@@ -747,7 +776,14 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
               )}
             </Box>
           ) : (
-            <Typography variant="body2" color="text.secondary">
+            <Typography 
+              variant={dense ? 'caption' : 'body2'} 
+              color="text.secondary"
+              sx={{
+                fontSize: dense ? '0.65rem' : '0.875rem',
+                lineHeight: dense ? 1.2 : 1.4
+              }}
+            >
               No subtasks
             </Typography>
           )}
@@ -756,19 +792,59 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
           {row.status === 'completed' ? (
             <>
               {/* Always show Due Date/Time */}
-              {(() => { const { date, time } = splitDateTime(row.due_date); return <span style={{ textDecoration: 'line-through' }}>{date}{" "}<span style={{ color: '#aaa', fontSize: '0.9em' }}>{time}</span></span>; })()}
+              {(() => { 
+                const { date, time } = splitDateTime(row.due_date); 
+                return (
+                  <Typography 
+                    variant={dense ? 'caption' : 'body2'} 
+                    sx={{ 
+                      textDecoration: 'line-through',
+                      fontSize: dense ? '0.65rem' : '0.875rem',
+                      lineHeight: dense ? 1.2 : 1.4
+                    }}
+                  >
+                    {date}{" "}<span style={{ color: '#aaa', fontSize: dense ? '0.85em' : '0.9em' }}>{time}</span>
+                  </Typography>
+                ); 
+              })()}
               {/* Show Completed Date/Time if available */}
               {row.completed_at && (
-                <span style={{ display: 'block', marginTop: '8px' }}>{(() => { const { date, time } = splitAndFormatCompletedAt(row.completed_at); return <span>Completed: {date}{" "}<span style={{ color: '#aaa', fontSize: '0.9em' }}>{time}</span></span>; })()}</span>
+                <Typography 
+                  variant={dense ? 'caption' : 'body2'} 
+                  sx={{ 
+                    display: 'block', 
+                    marginTop: dense ? '4px' : '8px',
+                    fontSize: dense ? '0.65rem' : '0.875rem',
+                    lineHeight: dense ? 1.2 : 1.4
+                  }}
+                >
+                  {(() => { 
+                    const { date, time } = splitAndFormatCompletedAt(row.completed_at); 
+                    return <span>Completed: {date}{" "}<span style={{ color: '#aaa', fontSize: dense ? '0.85em' : '0.9em' }}>{time}</span></span>; 
+                  })()}
+                </Typography>
               )}
             </>
           ) : (
             /* Only show Due Date/Time for incomplete tasks */
-            (() => { const { date, time } = splitDateTime(row.due_date); return <span>{date}{" "}<span style={{ color: '#aaa', fontSize: '0.9em' }}>{time}</span></span>; })()
+            (() => { 
+              const { date, time } = splitDateTime(row.due_date); 
+              return (
+                <Typography 
+                  variant={dense ? 'caption' : 'body2'} 
+                  sx={{ 
+                    fontSize: dense ? '0.65rem' : '0.875rem',
+                    lineHeight: dense ? 1.2 : 1.4
+                  }}
+                >
+                  {date}{" "}<span style={{ color: '#aaa', fontSize: dense ? '0.85em' : '0.9em' }}>{time}</span>
+                </Typography>
+              ); 
+            })()
           )}
         </TableCell>
         <TableCell sx={{
-          minWidth: 100,
+          minWidth: dense ? 80 : 100,
         }}>
           <Label
             variant='soft'
@@ -777,22 +853,40 @@ function RowItem({ row, onView, onEditTask, onDeleteTask, onMarkCompleteTask, de
               (row.priority === 'medium' && 'warning') ||
               'success'
             }
+            sx={{
+              fontSize: dense ? '0.65rem' : '0.75rem',
+              height: dense ? 20 : 24
+            }}
           >
             {row.priority}
           </Label>
         </TableCell>
         <TableCell>
-          <Stack direction='row' spacing={1}>
-            <IconButton color='info' onClick={onView}>
-              <Iconify icon='solar:eye-bold' />
+          <Stack direction='row' spacing={dense ? 0.5 : 1}>
+            <IconButton 
+              color='info' 
+              onClick={onView}
+              size={dense ? 'small' : 'medium'}
+              sx={{ p: dense ? 0.5 : 1 }}
+            >
+              <Iconify icon='solar:eye-bold' width={dense ? 16 : 20} />
             </IconButton>
-            <IconButton color='primary' onClick={handleEdit}>
-              <Iconify icon='solar:pen-bold' />
+            <IconButton 
+              color='primary' 
+              onClick={handleEdit}
+              size={dense ? 'small' : 'medium'}
+              sx={{ p: dense ? 0.5 : 1 }}
+            >
+              <Iconify icon='solar:pen-bold' width={dense ? 16 : 20} />
             </IconButton>
             <IconButton
               color={row.priority === 'overdue' ? 'error' : 'error'}
-              onClick={handleDelete} title='Delete Task'>
-              <Iconify icon='solar:trash-bin-trash-bold' />
+              onClick={handleDelete} 
+              title='Delete Task'
+              size={dense ? 'small' : 'medium'}
+              sx={{ p: dense ? 0.5 : 1 }}
+            >
+              <Iconify icon='solar:trash-bin-trash-bold' width={dense ? 16 : 20} />
             </IconButton>
           </Stack>
         </TableCell>
