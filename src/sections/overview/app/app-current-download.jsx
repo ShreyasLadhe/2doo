@@ -6,9 +6,12 @@ import { Chart, useChart, ChartLegends } from 'src/components/chart';
 import { fNumber } from 'src/utils/format-number';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import IconButton from '@mui/material/IconButton';
+import Stack from '@mui/material/Stack';
 import dayjs from 'dayjs';
+import { Iconify } from 'src/components/iconify';
 
-export function AppCurrentDownload({ title, subheader, tasks = [], sx, view = 'week', onViewChange, ...other }) {
+export function AppCurrentDownload({ title, subheader, tasks = [], sx, view = 'week', onViewChange, periodOffset = 0, onNavigate, ...other }) {
   const theme = useTheme();
 
   // Helper to check if a task is overdue
@@ -18,14 +21,12 @@ export function AppCurrentDownload({ title, subheader, tasks = [], sx, view = 'w
     return dueDate.isBefore(now) && task.status !== 'completed';
   }
 
-  // Get week/month range
-  const today = new Date();
-  const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - today.getDay());
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
-  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  // Get week/month range with offset
+  const baseDate = dayjs().add(periodOffset, view === 'week' ? 'week' : 'month');
+  const startOfWeek = baseDate.startOf('week').toDate();
+  const endOfWeek = baseDate.endOf('week').toDate();
+  const startOfMonth = baseDate.startOf('month').toDate();
+  const endOfMonth = baseDate.endOf('month').toDate();
 
   // Filter tasks for week or month
   const filteredTasks = tasks.filter(task => {
@@ -93,16 +94,33 @@ export function AppCurrentDownload({ title, subheader, tasks = [], sx, view = 'w
         title={title}
         subheader={subheader}
         action={
-          <ToggleButtonGroup
-            value={view}
-            exclusive
-            onChange={(_, val) => val && onViewChange && onViewChange(val)}
-            size="small"
-            sx={{ ml: 2 }}
-          >
-            <ToggleButton value="week">Week</ToggleButton>
-            <ToggleButton value="month">Month</ToggleButton>
-          </ToggleButtonGroup>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <IconButton
+              size="small"
+              onClick={() => onNavigate && onNavigate(-1)}
+              disabled={periodOffset <= -12} // Limit to 12 periods back
+              sx={{ color: 'text.secondary' }}
+            >
+              <Iconify icon="eva:arrow-ios-back-fill" />
+            </IconButton>
+            <ToggleButtonGroup
+              value={view}
+              exclusive
+              onChange={(_, val) => val && onViewChange && onViewChange(val)}
+              size="small"
+            >
+              <ToggleButton value="week">Week</ToggleButton>
+              <ToggleButton value="month">Month</ToggleButton>
+            </ToggleButtonGroup>
+            <IconButton
+              size="small"
+              onClick={() => onNavigate && onNavigate(1)}
+              disabled={periodOffset >= 12} // Limit to 12 periods ahead
+              sx={{ color: 'text.secondary' }}
+            >
+              <Iconify icon="eva:arrow-ios-forward-fill" />
+            </IconButton>
+          </Stack>
         }
       />
       <Chart
