@@ -349,6 +349,15 @@ export default function MyTasksPage() {
     if (newStatus === 'completed') {
       setAnimatingTaskId(task.id);
       setShowConfetti(true);
+      
+      // Immediately update local state to remove overdue status for completed tasks
+      setTasks(prevTasks => 
+        prevTasks.map(t => 
+          t.id === task.id 
+            ? { ...t, status: newStatus, isOverdue: false, completed_at: getCurrentTimeGMT530() }
+            : t
+        )
+      );
     }
 
     // Wait for strikethrough animation to complete before updating the database
