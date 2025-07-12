@@ -130,6 +130,8 @@ export function OverviewAppView() {
   const [endDate, setEndDate] = useState(null);
   const [downloadView, setDownloadView] = useState('week');
   const [areaView, setAreaView] = useState('week');
+  const [downloadPeriodOffset, setDownloadPeriodOffset] = useState(0);
+  const [areaPeriodOffset, setAreaPeriodOffset] = useState(0);
   const [availableTags, setAvailableTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [searchAnchorEl, setSearchAnchorEl] = useState(null);
@@ -309,6 +311,15 @@ export function OverviewAppView() {
     if (newStatus === 'completed') {
       setAnimatingTaskId(task.id);
       setShowConfetti(true);
+      
+      // Immediately update local state to remove overdue status for completed tasks
+      setTasks(prevTasks => 
+        prevTasks.map(t => 
+          t.id === task.id 
+            ? { ...t, status: newStatus, isOverdue: false, completed_at: getCurrentTimeGMT530() }
+            : t
+        )
+      );
     }
 
     // Wait for strikethrough animation to complete before updating the database
@@ -336,6 +347,25 @@ export function OverviewAppView() {
   const handleTabChange = (event, newValue) => {
     setTab(newValue);
     setListPage(1);
+  };
+
+  // Navigation handlers for charts
+  const handleDownloadViewChange = (newView) => {
+    setDownloadView(newView);
+    setDownloadPeriodOffset(0); // Reset to current period when switching views
+  };
+
+  const handleAreaViewChange = (newView) => {
+    setAreaView(newView);
+    setAreaPeriodOffset(0); // Reset to current period when switching views
+  };
+
+  const handleDownloadNavigation = (direction) => {
+    setDownloadPeriodOffset(prev => prev + direction);
+  };
+
+  const handleAreaNavigation = (direction) => {
+    setAreaPeriodOffset(prev => prev + direction);
   };
 
   // Filtering logic for search, date range, and tags
@@ -371,38 +401,47 @@ export function OverviewAppView() {
 
   if (tab === 'today') {
     filteredTasks = filteredTasks.filter(task => {
-      let taskDate = null;
+      // For completed tasks, show if completed today
       if (task.status === 'completed') {
-        // Assuming completed_at is UTC, parse as UTC and then convert to local
-        taskDate = task.completed_at ? dayjs.utc(task.completed_at) : null;
-      } else {
-        // Assuming due_date is stored in YYYY-MM-DD HH:mm format in server timezone, parse with format and timezone
-        taskDate = task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null;
+        const taskDate = task.completed_at ? dayjs.utc(task.completed_at) : null;
+        if (!taskDate || !taskDate.isValid()) return false;
+        const taskDateLocalNormalized = taskDate.tz(localTimezone).startOf('day');
+        return taskDateLocalNormalized.isSame(todayStart, 'day');
       }
-
-      if (!taskDate || !taskDate.isValid()) return false;
-
-      // Convert task date to local timezone and normalize to start of day for comparison
+      
+      // For incomplete tasks, show if due today OR overdue
+      if (!task.due_date) return false;
+      
+      const taskDate = dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone);
+      if (!taskDate.isValid()) return false;
+      
       const taskDateLocalNormalized = taskDate.tz(localTimezone).startOf('day');
-
-      // Filter for tasks where the normalized date is the same as today's normalized date in local time
-      return taskDateLocalNormalized.isSame(todayStart, 'day');
+      const now = dayjs().tz(localTimezone);
+      
+      // Include tasks that are due today OR overdue (before today)
+      return taskDateLocalNormalized.isSame(todayStart, 'day') || taskDate.isBefore(now);
     });
   } else if (tab === 'tomorrow') {
     filteredTasks = filteredTasks.filter(task => {
-      let taskDate = null;
+      // For completed tasks, show if completed tomorrow
       if (task.status === 'completed') {
-        taskDate = task.completed_at ? dayjs.utc(task.completed_at) : null;
-      } else {
-        taskDate = task.due_date ? dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone) : null;
+        const taskDate = task.completed_at ? dayjs.utc(task.completed_at) : null;
+        if (!taskDate || !taskDate.isValid()) return false;
+        const taskDateLocalNormalized = taskDate.tz(localTimezone).startOf('day');
+        return taskDateLocalNormalized.isSame(tomorrowStart, 'day');
       }
-
-      if (!taskDate || !taskDate.isValid()) return false;
-
+      
+      // For incomplete tasks, show if due tomorrow OR overdue
+      if (!task.due_date) return false;
+      
+      const taskDate = dayjs(task.due_date, 'YYYY-MM-DD HH:mm', serverTimezone);
+      if (!taskDate.isValid()) return false;
+      
       const taskDateLocalNormalized = taskDate.tz(localTimezone).startOf('day');
-
-      // Filter for tasks where the normalized date is the same as tomorrow's normalized date in local time
-      return taskDateLocalNormalized.isSame(tomorrowStart, 'day');
+      const now = dayjs().tz(localTimezone);
+      
+      // Include tasks that are due tomorrow OR overdue (before now)
+      return taskDateLocalNormalized.isSame(tomorrowStart, 'day') || taskDate.isBefore(now);
     });
   } else if (tab === 'week') {
     filteredTasks = filteredTasks.filter(task => {
@@ -1290,21 +1329,31 @@ export function OverviewAppView() {
 
         <Grid size={{ xs: 12, md: 6, lg: 4 }}>
           <AppCurrentDownload
-            title={`Tasks This ${downloadView === 'week' ? 'Week' : 'Month'}`}
+            title={`Tasks ${
+              downloadPeriodOffset === 0
+                ? (downloadView === 'week' ? 'This Week' : 'This Month')
+                : downloadView === 'week'
+                  ? `Week of ${dayjs().add(downloadPeriodOffset, 'week').format('MMM D, YYYY')}`
+                  : dayjs().add(downloadPeriodOffset, 'month').format('MMMM YYYY')
+            }`}
             subheader={`Breakdown by status (${downloadView === 'week' ? 'week' : 'month'})`}
             tasks={tasks}
             view={downloadView}
-            onViewChange={setDownloadView}
+            onViewChange={handleDownloadViewChange}
+            periodOffset={downloadPeriodOffset}
+            onNavigate={handleDownloadNavigation}
           />
         </Grid>
 
         <Grid size={{ xs: 12, md: 6, lg: 8 }}>
           <AppAreaInstalled
-            title={`${areaView === 'week' ? 'Weekly' : 'Monthly'} Task Distribution`}
-            subheader={`Tasks by status for the current ${areaView === 'week' ? 'week' : 'month'}`}
+            title={`${areaView === 'week' ? 'Weekly' : 'Monthly'} Task Distribution ${areaPeriodOffset === 0 ? '' : areaView === 'week' ? `(${dayjs().add(areaPeriodOffset, 'week').format('MMM D, YYYY')})` : `(${dayjs().add(areaPeriodOffset, 'month').format('MMMM YYYY')})`}`}
+            subheader={`Tasks by status for the ${areaPeriodOffset === 0 ? 'current' : areaPeriodOffset > 0 ? 'future' : 'past'} ${areaView === 'week' ? 'week' : 'month'}`}
             tasks={tasks}
             view={areaView}
-            onViewChange={setAreaView}
+            onViewChange={handleAreaViewChange}
+            periodOffset={areaPeriodOffset}
+            onNavigate={handleAreaNavigation}
           />
         </Grid>
 
